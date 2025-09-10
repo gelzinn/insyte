@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User sessions table
+model Session {
+  id         String   @id @default(cuid())
+  session_id String   @unique
+  user_id    String?
+  user_agent String?
+  ip_address String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  pageviews Pageview[]
+  user_info UserInfo?
+
+  @@map("sessions")
+}
+
+// Page views table
+model Pageview {
+  id         String   @id @default(cuid())
+  session_id String
+  user_id    String?
+  url        String
+  path       String
+  title      String?
+  referrer   String?
+  timestamp  DateTime @default(now())
+  duration   Int? // in seconds
+  is_exit    Boolean  @default(false)
+  is_bounce  Boolean  @default(false)
+
+  // Relations
+  session Session @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
+
+  @@map("pageviews")
+}
+
+// User information table
+model UserInfo {
+  id              String   @id @default(cuid())
+  session_id      String   @unique
+  user_id         String?
+  user_agent      String?
+  device_type     String?
+  device_brand    String?
+  device_model    String?
+  browser_name    String?
+  browser_version String?
+  os_name         String?
+  os_version      String?
+  country         String?
+  region          String?
+  city            String?
+  timezone        String?
+  language        String?
+  ip_address      String?
+  first_visit     DateTime @default(now())
+  last_visit      DateTime @updatedAt
+  visit_count     Int      @default(1)
+  is_new_user     Boolean  @default(true)
+
+  // Relations
+  session Session @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
+
+  @@map("user_info")
+}
+
+// Traffic sources table
+model TrafficSource {
+  id             String   @id @default(cuid())
+  session_id     String   @unique
+  source_type    String // 'direct', 'organic', 'paid', 'social', 'referral', 'email', 'unknown'
+  referrer       String?
+  search_engine  String?
+  search_term    String?
+  social_network String?
+  utm_source     String?
+  utm_medium     String?
+  utm_campaign   String?
+  utm_term       String?
+  utm_content    String?
+  campaign_name  String?
+  created_at     DateTime @default(now())
+
+  @@map("traffic_sources")
+}
+
+// Real-time analytics table
+model RealTimeEvent {
+  id         String   @id @default(cuid())
+  event_type String // 'pageview', 'session_start', 'session_end'
+  session_id String
+  user_id    String?
+  url        String?
+  timestamp  DateTime @default(now())
+  metadata   String? // JSON string for additional data
+
+  @@map("realtime_events")
+}
+
+// Analytics cache table for performance
+model AnalyticsCache {
+  id         String   @id @default(cuid())
+  cache_key  String   @unique
+  cache_data String // JSON string
+  created_at DateTime @default(now())
+  expires_at DateTime
+
+  @@map("analytics_cache")
+}
