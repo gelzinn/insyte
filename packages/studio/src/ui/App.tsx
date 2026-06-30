@@ -1,16 +1,26 @@
 import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson } from "./api";
+import { AppSidebar } from "@/components/app-sidebar";
 import {
   DataTable,
   EmptyOverview,
   RecordDetailPanel,
 } from "@/components/data-table";
+import { LiveIndicator } from "@/components/live-indicator";
 import { MetricCards } from "@/components/metric-cards";
-import { LiveIndicator, ModelSidebar, MODELS, type ModelId } from "@/components/model-sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MODELS, type ModelId } from "@/lib/models";
 
 interface Status {
   database: string;
@@ -18,7 +28,6 @@ interface Status {
     pageviews: number;
     events: number;
     sessions: number;
-    users: number;
   };
 }
 
@@ -26,7 +35,10 @@ interface Overview {
   totalPageviews: number;
   totalEvents: number;
   uniqueSessions: number;
-  uniqueUsers: number;
+}
+
+interface LiveOverview {
+  pageViewsPerMinute: number;
 }
 
 export default function App() {
@@ -36,6 +48,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
+  const [liveOverview, setLiveOverview] = useState<LiveOverview | null>(null);
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
@@ -48,11 +61,26 @@ export default function App() {
     setError(null);
 
     try {
-      const nextStatus = await fetchJson<Status>("/api/status");
-      setStatus(nextStatus);
+      const nextStatus = await fetchJson<Status & { counts: Status["counts"] & { users?: number } }>(
+        "/api/status",
+      );
+      setStatus({
+        database: nextStatus.database,
+        counts: {
+          pageviews: nextStatus.counts.pageviews,
+          events: nextStatus.counts.events,
+          sessions: nextStatus.counts.sessions,
+        },
+      });
 
       if (model === "overview") {
-        setOverview(await fetchJson<Overview>("/api/overview"));
+        const data = await fetchJson<Overview & { uniqueUsers?: number }>("/api/overview");
+        setOverview({
+          totalPageviews: data.totalPageviews,
+          totalEvents: data.totalEvents,
+          uniqueSessions: data.uniqueSessions,
+        });
+        setLiveOverview(null);
         setRows([]);
         setColumns([]);
         setSecondaryRows([]);
@@ -64,6 +92,8 @@ export default function App() {
           recent: Record<string, unknown>[];
           aggregated: Record<string, unknown>[];
         }>("/api/pageviews");
+        setOverview(null);
+        setLiveOverview(null);
         setRows(data.recent);
         setColumns(["path", "url", "sessionId", "referrer", "duration", "timestamp"]);
         setSecondaryTitle("Top pages");
@@ -74,8 +104,10 @@ export default function App() {
 
       if (model === "events") {
         const data = await fetchJson<{ events: Record<string, unknown>[] }>("/api/events");
+        setOverview(null);
+        setLiveOverview(null);
         setRows(data.events);
-        setColumns(["eventType", "sessionId", "userId", "url", "timestamp"]);
+        setColumns(["eventType", "sessionId", "url", "timestamp"]);
         setSecondaryRows([]);
         return;
       }
@@ -85,6 +117,8 @@ export default function App() {
           sources: Record<string, unknown>[];
           campaigns: Record<string, unknown>[];
         }>("/api/traffic");
+        setOverview(null);
+        setLiveOverview(null);
         setRows(data.sources);
         setColumns(["source", "count", "percentage"]);
         setSecondaryTitle("Campaigns");
@@ -99,12 +133,8 @@ export default function App() {
           pageViewsPerMinute: number;
           topPages: Record<string, unknown>[];
         }>("/api/live");
-        setOverview({
-          totalPageviews: data.pageViewsPerMinute,
-          totalEvents: data.activeUsers,
-          uniqueSessions: 0,
-          uniqueUsers: data.activeUsers,
-        });
+        setOverview(null);
+        setLiveOverview({ pageViewsPerMinute: data.pageViewsPerMinute });
         setRows(data.topPages);
         setColumns(["url", "views"]);
         setSecondaryRows([]);
@@ -142,8 +172,8 @@ export default function App() {
   const currentModel = MODELS.find((m) => m.id === model)!;
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <ModelSidebar
+    <SidebarProvider>
+      <AppSidebar
         model={model}
         onModelChange={setModel}
         filter={filter}
@@ -151,15 +181,27 @@ export default function App() {
         counts={modelCounts}
         database={status?.database}
       />
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center justify-between border-b px-6">
-          <div className="flex items-center gap-3">
-            {model === "live" ? <LiveIndicator /> : null}
-            <h1 className="text-base font-semibold">{currentModel.label}</h1>
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <span className="text-muted-foreground">Insyte Studio</span>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="flex items-center gap-2">
+                    {model === "live" ? <LiveIndicator /> : null}
+                    {currentModel.label}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
+          <div className="px-4">
             <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
               <RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />
               Refresh
@@ -168,17 +210,17 @@ export default function App() {
         </header>
 
         {error ? (
-          <div className="mx-6 mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="mx-4 mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         ) : null}
 
         <div className="flex min-h-0 flex-1">
-          <main className="min-w-0 flex-1 overflow-auto p-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-auto p-4 pt-0">
             {loading ? (
-              <div className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  {Array.from({ length: 4 }).map((_, i) => (
+              <div className="space-y-4 pt-4">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
                     <Skeleton key={i} className="h-28 rounded-xl" />
                   ))}
                 </div>
@@ -187,13 +229,12 @@ export default function App() {
             ) : null}
 
             {!loading && model === "overview" && overview ? (
-              <div className="space-y-6">
+              <div className="space-y-6 pt-4">
                 <MetricCards
                   items={[
                     { label: "Pageviews", value: overview.totalPageviews },
                     { label: "Events", value: overview.totalEvents },
                     { label: "Sessions", value: overview.uniqueSessions },
-                    { label: "Users", value: overview.uniqueUsers },
                   ]}
                 />
                 {overview.totalPageviews === 0 && overview.totalEvents === 0 ? (
@@ -202,13 +243,10 @@ export default function App() {
               </div>
             ) : null}
 
-            {!loading && model === "live" && overview ? (
-              <div className="space-y-6">
+            {!loading && model === "live" && liveOverview ? (
+              <div className="space-y-6 pt-4">
                 <MetricCards
-                  items={[
-                    { label: "Active users", value: overview.uniqueUsers },
-                    { label: "Pageviews / min", value: overview.totalPageviews },
-                  ]}
+                  items={[{ label: "Pageviews / min", value: liveOverview.pageViewsPerMinute }]}
                 />
                 <DataTable
                   title={`${filteredRows.length} records`}
@@ -222,7 +260,13 @@ export default function App() {
             ) : null}
 
             {!loading && model !== "overview" && model !== "live" ? (
-              <div className={secondaryRows.length ? "grid gap-6 xl:grid-cols-2" : "space-y-6"}>
+              <div
+                className={
+                  secondaryRows.length
+                    ? "grid gap-6 pt-4 xl:grid-cols-2"
+                    : "space-y-6 pt-4"
+                }
+              >
                 <DataTable
                   title={`${filteredRows.length} records`}
                   rows={filteredRows}
@@ -242,13 +286,13 @@ export default function App() {
                 ) : null}
               </div>
             ) : null}
-          </main>
+          </div>
 
           {selected ? (
             <RecordDetailPanel record={selected} onClose={() => setSelected(null)} />
           ) : null}
         </div>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

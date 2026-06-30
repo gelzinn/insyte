@@ -6,7 +6,7 @@ interface MetricCardsProps {
 
 export function MetricCards({ items }: MetricCardsProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => (
         <Card key={item.label}>
           <CardHeader className="pb-2">
