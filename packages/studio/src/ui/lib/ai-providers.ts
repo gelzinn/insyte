@@ -1,4 +1,4 @@
-export type ProviderId = "openrouter" | "grok" | "custom";
+export type ProviderId = "openrouter" | "groq" | "grok" | "grok-inc" | "custom";
 
 export interface ProviderModel {
   id: string;
@@ -38,10 +38,32 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDefinition> = {
       "Send a message in the assistant to verify the connection.",
     ],
   },
+  groq: {
+    id: "groq",
+    name: "Groq",
+    description: "Groq Inc fast inference API (OpenAI-compatible, not xAI Grok).",
+    docsUrl: "https://console.groq.com/docs",
+    defaultBaseUrl: "https://api.groq.com/openai/v1",
+    defaultModel: "llama-3.3-70b-versatile",
+    apiKeyPlaceholder: "gsk_...",
+    models: [
+      { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
+      { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant" },
+      { id: "gemma2-9b-it", label: "Gemma 2 9B" },
+      { id: "mixtral-8x7b-32768", label: "Mixtral 8x7B" },
+    ],
+    setupSteps: [
+      "Open console.groq.com and create a free account.",
+      "Go to API Keys and create a new key.",
+      "Paste the key below and keep the default api.groq.com base URL.",
+      "Pick a model — Llama 3.3 70B is a strong default for analytics questions.",
+      "Send a test message in the assistant to verify the connection.",
+    ],
+  },
   grok: {
     id: "grok",
-    name: "Grok",
-    description: "xAI models via api.x.ai (consumer chat lives at grok.com).",
+    name: "Grok (xAI)",
+    description: "Official xAI developer API via api.x.ai.",
     docsUrl: "https://docs.x.ai/docs",
     defaultBaseUrl: "https://api.x.ai/v1",
     defaultModel: "grok-4-fast-non-reasoning",
@@ -57,6 +79,28 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDefinition> = {
       "Generate an API key with chat completion access.",
       "New accounts may receive promotional credits — add billing only if you need more.",
       "Paste the key below, keep the default api.x.ai base URL, and choose a model.",
+    ],
+  },
+  "grok-inc": {
+    id: "grok-inc",
+    name: "Grok (grok.com)",
+    description:
+      "Consumer Grok via a local OpenAI-compatible proxy (grok-web-api, grok-to-openai, etc.).",
+    docsUrl: "https://github.com/imjustprism/grok-web-api",
+    defaultBaseUrl: "http://127.0.0.1:3000/v1",
+    defaultModel: "grok-4.3-auto",
+    apiKeyPlaceholder: "local-proxy-key (optional)",
+    models: [
+      { id: "grok-4.3-auto", label: "Grok 4.3 Auto" },
+      { id: "grok-4.3", label: "Grok 4.3" },
+      { id: "grok-3", label: "Grok 3" },
+    ],
+    setupSteps: [
+      "Run a local OpenAI-compatible proxy for grok.com (e.g. grok-web-api on port 3000).",
+      "Sign in to grok.com in your browser and export the session cookies the proxy needs.",
+      "Start the proxy and confirm GET http://127.0.0.1:3000/v1/models responds.",
+      "Paste the proxy API key if required (many local proxies accept any string).",
+      "Keep the default base URL unless your proxy listens on another host or port.",
     ],
   },
   custom: {

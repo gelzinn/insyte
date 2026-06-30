@@ -1,6 +1,6 @@
 import { ArrowUpIcon, Bot, MessageCircleDashedIcon, MoreVertical } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
-import { AssistantSettingsDialog } from "@/components/assistant-settings-dialog";
+import { MarkdownMessage } from "@/components/markdown-message";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
 import {
@@ -140,7 +140,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
     const text = draft.trim();
     if (!text || sending) return;
 
-    if (!config.apiKey.trim()) {
+    if (!config.apiKey.trim() && config.providerId !== "grok-inc") {
       setError("Configure a provider and API key to start chatting.");
       setSettingsOpen(true);
       return;
@@ -254,7 +254,13 @@ export function AssistantChat({ context }: AssistantChatProps) {
                             variant={message.role === "user" ? "default" : "muted"}
                             align={message.role === "user" ? "end" : "start"}
                           >
-                            <BubbleContent>{message.content}</BubbleContent>
+                            <BubbleContent>
+                              {message.role === "assistant" ? (
+                                <MarkdownMessage content={message.content} />
+                              ) : (
+                                message.content
+                              )}
+                            </BubbleContent>
                           </Bubble>
                         </MessageContent>
                       </Message>
