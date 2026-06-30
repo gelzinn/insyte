@@ -273,7 +273,7 @@ export default function App() {
                   columns={columns}
                   selected={selected}
                   onSelect={setSelected}
-                  emptyLabel={model}
+                  emptyLabel={currentModel.label}
                 />
                 {secondaryRows.length ? (
                   <DataTable

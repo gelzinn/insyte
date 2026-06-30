@@ -23,7 +23,7 @@ interface NavModelsProps {
 export function NavModels({ items, activeId, onSelect }: NavModelsProps) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Models</SidebarGroupLabel>
+      <SidebarGroupLabel>Browse</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.id}>
@@ -33,7 +33,7 @@ export function NavModels({ items, activeId, onSelect }: NavModelsProps) {
               onClick={() => onSelect(item.id)}
             >
               <item.icon />
-              <span>{item.label}</span>
+              <span className="truncate">{item.label}</span>
             </SidebarMenuButton>
             {item.count !== undefined ? (
               <SidebarMenuBadge>{item.count.toLocaleString()}</SidebarMenuBadge>

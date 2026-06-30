@@ -3,6 +3,7 @@ import { Database, Moon, Monitor, Sun } from "lucide-react";
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -13,7 +14,16 @@ interface NavSecondaryProps {
   database?: string;
 }
 
-export function NavSecondary({ database, ...props }: NavSecondaryProps & React.ComponentProps<typeof SidebarGroup>) {
+function databaseName(path?: string): string {
+  if (!path) return "Connecting…";
+  const parts = path.split(/[/\\]/);
+  return parts[parts.length - 1] || path;
+}
+
+export function NavSecondary({
+  database,
+  ...props
+}: NavSecondaryProps & React.ComponentProps<typeof SidebarGroup>) {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   function cycleTheme() {
@@ -23,25 +33,32 @@ export function NavSecondary({ database, ...props }: NavSecondaryProps & React.C
   }
 
   const ThemeIcon = theme === "system" ? Monitor : resolvedTheme === "dark" ? Moon : Sun;
-  const themeLabel =
-    theme === "system" ? "System theme" : theme === "dark" ? "Dark mode" : "Light mode";
+  const themeMode =
+    theme === "system" ? "System" : theme === "dark" ? "Dark" : "Light";
 
   return (
     <SidebarGroup {...props}>
+      <SidebarGroupLabel>Settings</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="sm" className="h-auto py-2">
+            <SidebarMenuButton size="lg" className="h-auto py-2" tooltip={database}>
               <Database />
-              <span className="break-all text-xs leading-relaxed">
-                {database ?? "Connecting..."}
-              </span>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">Database</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {databaseName(database)}
+                </span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton size="sm" onClick={cycleTheme} tooltip={themeLabel}>
+            <SidebarMenuButton size="lg" className="h-auto py-2" onClick={cycleTheme}>
               <ThemeIcon />
-              <span>{themeLabel}</span>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">Theme</span>
+                <span className="truncate text-xs text-muted-foreground">{themeMode}</span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
