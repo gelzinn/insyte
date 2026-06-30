@@ -1,7 +1,12 @@
-import { Bot, PanelRight, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson } from "./api";
-import { AiChatPanel } from "@/components/ai-chat-panel";
+import { AssistantChat } from "@/components/assistant-chat";
+import {
+  AssistantSidebar,
+  AssistantSidebarProvider,
+  AssistantSidebarTrigger,
+} from "@/components/assistant-sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
   DataTable,
@@ -22,7 +27,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { buildStudioContext } from "@/lib/studio-context";
 import { cn } from "@/lib/utils";
 import { MODELS, type ModelId } from "@/lib/models";
@@ -67,57 +71,6 @@ function ContentSpinner() {
   );
 }
 
-function StudioHeaderToolbar({
-  showSearch,
-  filter,
-  onFilterChange,
-  refreshing,
-  isNavigating,
-  onRefresh,
-  aiOpen,
-  onToggleAi,
-}: {
-  showSearch: boolean;
-  filter: string;
-  onFilterChange: (value: string) => void;
-  refreshing: boolean;
-  isNavigating: boolean;
-  onRefresh: () => void;
-  aiOpen: boolean;
-  onToggleAi: () => void;
-}) {
-  return (
-    <div className="flex items-center gap-2 px-4">
-      {showSearch ? (
-        <SearchInput
-          value={filter}
-          onChange={onFilterChange}
-          className="w-40 sm:w-56"
-        />
-      ) : null}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onRefresh}
-        disabled={refreshing || isNavigating}
-      >
-        <RefreshCw className={refreshing ? "size-4 animate-spin" : "size-4"} />
-        Refresh
-      </Button>
-      <Button
-        variant={aiOpen ? "secondary" : "outline"}
-        size="sm"
-        onClick={onToggleAi}
-        title="Toggle assistant (])"
-      >
-        <PanelRight className="size-4" />
-        <Bot className="size-4" />
-        <span className="hidden sm:inline">Assistant</span>
-      </Button>
-    </div>
-  );
-}
-
 function StudioShell() {
   const [model, setModel] = useState<ModelId>("pageviews");
   const [filter, setFilter] = useState("");
@@ -134,9 +87,6 @@ function StudioShell() {
   const [secondaryRows, setSecondaryRows] = useState<Record<string, unknown>[]>([]);
   const [secondaryColumns, setSecondaryColumns] = useState<string[]>([]);
   const [secondaryTitle, setSecondaryTitle] = useState("");
-  const [aiOpen, setAiOpen] = useState(false);
-
-  useKeyboardShortcut("]", () => setAiOpen((open) => !open));
 
   const load = useCallback(
     async (options?: { silent?: boolean }) => {
@@ -261,6 +211,37 @@ function StudioShell() {
   const showInitialSkeleton = initialLoading;
   const showNavigationSpinner = !initialLoading && isNavigating;
   const showContent = loadedModel === model && !initialLoading;
+  const showSearch = model !== "overview";
+
+  const studioContext = useMemo(
+    () =>
+      buildStudioContext({
+        model,
+        modelLabel: currentModel.label,
+        filter,
+        overview,
+        liveOverview,
+        counts: status?.counts,
+        columns,
+        rows: filteredRows,
+        secondaryTitle,
+        secondaryRows,
+        selectedRecord: selected,
+      }),
+    [
+      model,
+      currentModel.label,
+      filter,
+      overview,
+      liveOverview,
+      status?.counts,
+      columns,
+      filteredRows,
+      secondaryTitle,
+      secondaryRows,
+      selected,
+    ],
+  );
 
   function renderContent() {
     if (loadedModel === "overview" && overview) {
@@ -327,38 +308,6 @@ function StudioShell() {
     return null;
   }
 
-  const showSearch = model !== "overview";
-
-  const studioContext = useMemo(
-    () =>
-      buildStudioContext({
-        model,
-        modelLabel: currentModel.label,
-        filter,
-        overview,
-        liveOverview,
-        counts: status?.counts,
-        columns,
-        rows: filteredRows,
-        secondaryTitle,
-        secondaryRows,
-        selectedRecord: selected,
-      }),
-    [
-      model,
-      currentModel.label,
-      filter,
-      overview,
-      liveOverview,
-      status?.counts,
-      columns,
-      filteredRows,
-      secondaryTitle,
-      secondaryRows,
-      selected,
-    ],
-  );
-
   return (
     <>
       <AppSidebar
@@ -367,71 +316,79 @@ function StudioShell() {
         counts={modelCounts}
         database={status?.database}
       />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" title="Toggle sidebar ([)" />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <span className="text-muted-foreground">Insyte Studio</span>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="flex items-center gap-2">
-                    {model === "live" ? <LiveIndicator /> : null}
-                    {currentModel.label}
-                  </BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <StudioHeaderToolbar
-            showSearch={showSearch}
-            filter={filter}
-            onFilterChange={setFilter}
-            refreshing={refreshing}
-            isNavigating={isNavigating}
-            onRefresh={() => void load()}
-            aiOpen={aiOpen}
-            onToggleAi={() => setAiOpen((open) => !open)}
-          />
-        </header>
-
-        {error ? (
-          <div className="mx-4 mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        ) : null}
-
-        <div className="flex min-h-0 flex-1">
-          <div className="relative min-w-0 flex-1 overflow-auto p-4 pt-0">
-            {showInitialSkeleton ? <ContentSkeleton /> : null}
-            {showNavigationSpinner ? <ContentSpinner /> : null}
-            {showContent ? (
-              <div
-                className={cn(
-                  "transition-opacity duration-200",
-                  isBackgroundRefresh && "pointer-events-none opacity-60",
-                )}
+      <AssistantSidebarProvider>
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b">
+            <div className="flex items-center gap-2 px-4">
+              <SidebarTrigger className="-ml-1" title="Toggle sidebar ([)" />
+              <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden md:block">
+                    <span className="text-muted-foreground">Insyte Studio</span>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator className="hidden md:block" />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="flex items-center gap-2">
+                      {model === "live" ? <LiveIndicator /> : null}
+                      {currentModel.label}
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+            <div className="flex items-center gap-2 px-4">
+              {showSearch ? (
+                <SearchInput
+                  value={filter}
+                  onChange={setFilter}
+                  className="w-40 sm:w-56"
+                />
+              ) : null}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void load()}
+                disabled={refreshing || isNavigating}
               >
-                {renderContent()}
-              </div>
-            ) : null}
-          </div>
+                <RefreshCw className={refreshing ? "size-4 animate-spin" : "size-4"} />
+                Refresh
+              </Button>
+              <AssistantSidebarTrigger />
+            </div>
+          </header>
 
-          {selected ? (
-            <RecordDetailPanel record={selected} onClose={() => setSelected(null)} />
+          {error ? (
+            <div className="mx-4 mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </div>
           ) : null}
 
-          <AiChatPanel
-            open={aiOpen}
-            onClose={() => setAiOpen(false)}
-            context={studioContext}
-          />
-        </div>
-      </SidebarInset>
+          <div className="flex min-h-0 flex-1">
+            <div className="relative min-w-0 flex-1 overflow-auto p-4 pt-0">
+              {showInitialSkeleton ? <ContentSkeleton /> : null}
+              {showNavigationSpinner ? <ContentSpinner /> : null}
+              {showContent ? (
+                <div
+                  className={cn(
+                    "transition-opacity duration-200",
+                    isBackgroundRefresh && "pointer-events-none opacity-60",
+                  )}
+                >
+                  {renderContent()}
+                </div>
+              ) : null}
+            </div>
+
+            {selected ? (
+              <RecordDetailPanel record={selected} onClose={() => setSelected(null)} />
+            ) : null}
+          </div>
+        </SidebarInset>
+        <AssistantSidebar>
+          <AssistantChat context={studioContext} />
+        </AssistantSidebar>
+      </AssistantSidebarProvider>
     </>
   );
 }
