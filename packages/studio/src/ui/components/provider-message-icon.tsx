@@ -19,32 +19,21 @@ export function ProviderMessageIcon({ providerId, className }: ProviderMessageIc
 
   if (!iconUrl || failed) {
     return (
-      <div
-        className={cn(
-          "flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground",
-          className,
-        )}
-      >
-        <Bot className="size-4" aria-hidden="true" />
-      </div>
+      <Bot
+        className={cn("size-5 shrink-0 text-muted-foreground", className)}
+        aria-hidden="true"
+      />
     );
   }
 
   return (
-    <div
-      className={cn(
-        "flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted p-1.5",
-        className,
-      )}
-    >
-      <img
-        src={iconUrl}
-        alt=""
-        aria-hidden="true"
-        className="size-full object-contain"
-        onError={() => setFailed(true)}
-        title={providerName}
-      />
-    </div>
+    <img
+      src={iconUrl}
+      alt=""
+      aria-hidden="true"
+      className={cn("size-5 shrink-0 object-contain", className)}
+      onError={() => setFailed(true)}
+      title={providerName}
+    />
   );
 }

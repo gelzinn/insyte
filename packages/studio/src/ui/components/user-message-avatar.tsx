@@ -6,7 +6,7 @@ export function UserMessageAvatar({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 18 18"
       aria-hidden="true"
-      className={cn("size-8 shrink-0 text-foreground", className)}
+      className={cn("size-5 shrink-0 text-foreground", className)}
     >
       <path
         fillRule="evenodd"

@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Message, MessageAvatar, MessageContent, MessageHeader } from "@/components/ui/message";
+import { Message, MessageContent } from "@/components/ui/message";
 import { AI_PROVIDERS } from "@/lib/ai-providers";
 import { type ChatMessage, getMessageDisplayName } from "@/lib/chat-message";
 import { cn } from "@/lib/utils";
@@ -85,25 +85,24 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
   return (
     <>
       <Message align={isUser ? "end" : "start"} className="items-start">
-        <MessageAvatar className="self-start bg-transparent p-0">
-          {isUser ? (
-            <UserMessageAvatar />
-          ) : message.meta ? (
-            <ProviderMessageIcon providerId={message.meta.providerId} />
-          ) : (
-            <ProviderMessageIcon providerId="custom" />
-          )}
-        </MessageAvatar>
-
-        <MessageContent className="max-w-[85%]">
-          <MessageHeader
+        <MessageContent className="max-w-[85%] gap-1.5">
+          <div
             className={cn(
-              "px-0 pb-1",
-              isUser ? "justify-end text-right" : "justify-start text-left",
+              "flex items-center gap-2",
+              isUser ? "flex-row-reverse self-end" : "flex-row self-start",
             )}
           >
-            {displayName}
-          </MessageHeader>
+            {isUser ? (
+              <UserMessageAvatar />
+            ) : message.meta ? (
+              <ProviderMessageIcon providerId={message.meta.providerId} />
+            ) : (
+              <ProviderMessageIcon providerId="custom" />
+            )}
+            <span className="text-xs leading-none font-medium text-muted-foreground">
+              {displayName}
+            </span>
+          </div>
 
           <div
             className={cn(
