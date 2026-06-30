@@ -5,7 +5,7 @@ export interface ChatMessage {
   content: string;
 }
 
-export type ProviderId = "openrouter" | "grok" | "custom";
+export type ProviderId = "openrouter" | "grok" | "grok-inc" | "custom";
 
 export interface AiChatRequest {
   providerId: ProviderId;
@@ -28,6 +28,10 @@ function resolveChatUrl(providerId: ProviderId, baseUrl?: string): string {
     return "https://api.x.ai/v1/chat/completions";
   }
 
+  if (providerId === "grok-inc") {
+    return "http://127.0.0.1:3000/v1/chat/completions";
+  }
+
   return DEFAULT_OPENROUTER_URL;
 }
 
@@ -47,7 +51,9 @@ function resolveHeaders(providerId: ProviderId, apiKey: string): Record<string, 
 
 export async function handleAiChat(body: AiChatRequest) {
   if (!body.apiKey?.trim()) {
-    return { status: 400 as const, data: { error: "An API key is required for the selected provider." } };
+    if (body.providerId !== "grok-inc") {
+      return { status: 400 as const, data: { error: "An API key is required for the selected provider." } };
+    }
   }
 
   if (!body.model?.trim()) {
@@ -74,9 +80,14 @@ export async function handleAiChat(body: AiChatRequest) {
       .join("\n"),
   };
 
+  const headers = resolveHeaders(body.providerId, body.apiKey);
+  if (body.providerId === "grok-inc" && !body.apiKey?.trim()) {
+    delete headers.Authorization;
+  }
+
   const response = await fetch(resolveChatUrl(body.providerId, body.baseUrl), {
     method: "POST",
-    headers: resolveHeaders(body.providerId, body.apiKey),
+    headers,
     body: JSON.stringify({
       model: body.model.trim(),
       messages: [systemMessage, ...body.messages.filter((message) => message.role !== "system")],

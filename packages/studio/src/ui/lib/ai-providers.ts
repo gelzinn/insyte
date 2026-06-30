@@ -1,4 +1,4 @@
-export type ProviderId = "openrouter" | "grok" | "custom";
+export type ProviderId = "openrouter" | "grok" | "grok-inc" | "custom";
 
 export interface ProviderModel {
   id: string;
@@ -40,8 +40,8 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDefinition> = {
   },
   grok: {
     id: "grok",
-    name: "Grok",
-    description: "xAI models via api.x.ai (consumer chat lives at grok.com).",
+    name: "Grok (xAI)",
+    description: "Official xAI developer API via api.x.ai.",
     docsUrl: "https://docs.x.ai/docs",
     defaultBaseUrl: "https://api.x.ai/v1",
     defaultModel: "grok-4-fast-non-reasoning",
@@ -57,6 +57,28 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDefinition> = {
       "Generate an API key with chat completion access.",
       "New accounts may receive promotional credits — add billing only if you need more.",
       "Paste the key below, keep the default api.x.ai base URL, and choose a model.",
+    ],
+  },
+  "grok-inc": {
+    id: "grok-inc",
+    name: "Grok (grok.com)",
+    description:
+      "Consumer Grok via a local OpenAI-compatible proxy (grok-web-api, grok-to-openai, etc.).",
+    docsUrl: "https://github.com/imjustprism/grok-web-api",
+    defaultBaseUrl: "http://127.0.0.1:3000/v1",
+    defaultModel: "grok-4.3-auto",
+    apiKeyPlaceholder: "local-proxy-key (optional)",
+    models: [
+      { id: "grok-4.3-auto", label: "Grok 4.3 Auto" },
+      { id: "grok-4.3", label: "Grok 4.3" },
+      { id: "grok-3", label: "Grok 3" },
+    ],
+    setupSteps: [
+      "Run a local OpenAI-compatible proxy for grok.com (e.g. grok-web-api on port 3000).",
+      "Sign in to grok.com in your browser and export the session cookies the proxy needs.",
+      "Start the proxy and confirm GET http://127.0.0.1:3000/v1/models responds.",
+      "Paste the proxy API key if required (many local proxies accept any string).",
+      "Keep the default base URL unless your proxy listens on another host or port.",
     ],
   },
   custom: {

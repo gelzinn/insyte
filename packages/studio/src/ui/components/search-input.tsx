@@ -17,7 +17,7 @@ export function SearchInput({
   return (
     <label
       className={cn(
-        "flex h-9 min-w-0 items-center gap-2 rounded-md border border-input bg-background px-3 transition-colors",
+        "flex h-9 min-w-0 items-center gap-2 rounded-lg border border-input bg-background px-3 transition-colors",
         "focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
         className,
       )}
