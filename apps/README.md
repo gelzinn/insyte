@@ -13,8 +13,15 @@ Minimal demos to validate integration in each framework.
 
 ```bash
 bun install
-bun run build:lib
+bun run build:lib   # required on first clone — builds insyte, track, and studio
 bun run dev:apps
+```
+
+For studio + apps together:
+
+```bash
+bun run build:lib
+bun run dev         # or: bun run studio & bun run dev:apps
 ```
 
 ## What each demo does

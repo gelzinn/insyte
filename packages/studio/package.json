@@ -22,7 +22,9 @@
   ],
   "scripts": {
     "build": "vite build && tsup",
-    "dev": "tsx src/cli.ts --port 5555",
+    "build:ui": "vite build",
+    "predev": "( test -f ../analytics/dist/index.mjs || bun run --cwd ../analytics build ) && ( test -f dist/ui/index.html || bun run build:ui )",
+    "dev": "tsx src/cli.ts --port 5555 --database ../../.insyte/analytics.db --no-open",
     "dev:ui": "vite",
     "type-check": "tsc --noEmit"
   },
