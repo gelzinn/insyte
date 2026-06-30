@@ -1,7 +1,16 @@
+import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson } from "./api";
-
-type ModelId = "overview" | "pageviews" | "events" | "traffic" | "live";
+import {
+  DataTable,
+  EmptyOverview,
+  RecordDetailPanel,
+} from "@/components/data-table";
+import { MetricCards } from "@/components/metric-cards";
+import { LiveIndicator, ModelSidebar, MODELS, type ModelId } from "@/components/model-sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Status {
   database: string;
@@ -19,14 +28,6 @@ interface Overview {
   uniqueSessions: number;
   uniqueUsers: number;
 }
-
-const MODELS: Array<{ id: ModelId; label: string; icon: string }> = [
-  { id: "overview", label: "Overview", icon: "◆" },
-  { id: "pageviews", label: "pageviews", icon: "▤" },
-  { id: "events", label: "events", icon: "⚡" },
-  { id: "traffic", label: "traffic_sources", icon: "↗" },
-  { id: "live", label: "live", icon: "●" },
-];
 
 export default function App() {
   const [model, setModel] = useState<ModelId>("pageviews");
@@ -59,9 +60,10 @@ export default function App() {
       }
 
       if (model === "pageviews") {
-        const data = await fetchJson<{ recent: Record<string, unknown>[]; aggregated: Record<string, unknown>[] }>(
-          "/api/pageviews",
-        );
+        const data = await fetchJson<{
+          recent: Record<string, unknown>[];
+          aggregated: Record<string, unknown>[];
+        }>("/api/pageviews");
         setRows(data.recent);
         setColumns(["path", "url", "sessionId", "referrer", "duration", "timestamp"]);
         setSecondaryTitle("Top pages");
@@ -79,9 +81,10 @@ export default function App() {
       }
 
       if (model === "traffic") {
-        const data = await fetchJson<{ sources: Record<string, unknown>[]; campaigns: Record<string, unknown>[] }>(
-          "/api/traffic",
-        );
+        const data = await fetchJson<{
+          sources: Record<string, unknown>[];
+          campaigns: Record<string, unknown>[];
+        }>("/api/traffic");
         setRows(data.sources);
         setColumns(["source", "count", "percentage"]);
         setSecondaryTitle("Campaigns");
@@ -91,9 +94,11 @@ export default function App() {
       }
 
       if (model === "live") {
-        const data = await fetchJson<{ activeUsers: number; pageViewsPerMinute: number; topPages: Record<string, unknown>[] }>(
-          "/api/live",
-        );
+        const data = await fetchJson<{
+          activeUsers: number;
+          pageViewsPerMinute: number;
+          topPages: Record<string, unknown>[];
+        }>("/api/live");
         setOverview({
           totalPageviews: data.pageViewsPerMinute,
           totalEvents: data.activeUsers,
@@ -137,96 +142,87 @@ export default function App() {
   const currentModel = MODELS.find((m) => m.id === model)!;
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <div className="logo-row">
-            <div className="logo-mark">in</div>
-            <div className="logo-title">Insyte Studio</div>
+    <div className="flex min-h-screen bg-background">
+      <ModelSidebar
+        model={model}
+        onModelChange={setModel}
+        filter={filter}
+        onFilterChange={setFilter}
+        counts={modelCounts}
+        database={status?.database}
+      />
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b px-6">
+          <div className="flex items-center gap-3">
+            {model === "live" ? <LiveIndicator /> : null}
+            <h1 className="text-base font-semibold">{currentModel.label}</h1>
           </div>
-          <div className="logo-sub">Browse your local analytics database</div>
-        </div>
-
-        <div className="search-box">
-          <input
-            type="search"
-            placeholder="Search records..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
-        </div>
-
-        <div className="models-label">Models</div>
-        <nav className="model-list">
-          {MODELS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`model-btn ${model === item.id ? "active" : ""}`}
-              onClick={() => setModel(item.id)}
-            >
-              <span className="model-name">
-                <span className="model-icon">{item.icon}</span>
-                {item.label}
-              </span>
-              {item.id !== "overview" ? (
-                <span className="model-count">{modelCounts[item.id].toLocaleString()}</span>
-              ) : null}
-            </button>
-          ))}
-        </nav>
-
-        <div className="sidebar-footer">{status?.database ?? "Connecting..."}</div>
-      </aside>
-
-      <div className="main">
-        <header className="topbar">
-          <div className="topbar-title">
-            {model === "live" && <span className="live-dot" style={{ display: "inline-block", marginRight: 8 }} />}
-            {currentModel.label}
-          </div>
-          <div className="topbar-actions">
-            <button type="button" className="btn" onClick={() => void load()}>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+              <RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />
               Refresh
-            </button>
+            </Button>
           </div>
         </header>
 
-        {error ? <div className="error-banner">{error}</div> : null}
-        {loading ? <div className="loading-bar">Loading records...</div> : null}
+        {error ? (
+          <div className="mx-6 mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
 
-        <div className={`workspace ${selected ? "with-detail" : ""}`}>
-          <div className="content">
-            {!loading && model === "overview" && overview ? (
-              <>
-                <div className="overview-grid">
-                  <MetricCard label="Pageviews" value={overview.totalPageviews} />
-                  <MetricCard label="Events" value={overview.totalEvents} />
-                  <MetricCard label="Sessions" value={overview.uniqueSessions} />
-                  <MetricCard label="Users" value={overview.uniqueUsers} />
+        <div className="flex min-h-0 flex-1">
+          <main className="min-w-0 flex-1 overflow-auto p-6">
+            {loading ? (
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-28 rounded-xl" />
+                  ))}
                 </div>
-                <EmptyHint />
-              </>
+                <Skeleton className="h-64 rounded-xl" />
+              </div>
+            ) : null}
+
+            {!loading && model === "overview" && overview ? (
+              <div className="space-y-6">
+                <MetricCards
+                  items={[
+                    { label: "Pageviews", value: overview.totalPageviews },
+                    { label: "Events", value: overview.totalEvents },
+                    { label: "Sessions", value: overview.uniqueSessions },
+                    { label: "Users", value: overview.uniqueUsers },
+                  ]}
+                />
+                {overview.totalPageviews === 0 && overview.totalEvents === 0 ? (
+                  <EmptyOverview />
+                ) : null}
+              </div>
             ) : null}
 
             {!loading && model === "live" && overview ? (
-              <>
-                <div className="overview-grid">
-                  <MetricCard label="Active users" value={overview.uniqueUsers} />
-                  <MetricCard label="Pageviews / min" value={overview.totalPageviews} />
-                </div>
+              <div className="space-y-6">
+                <MetricCards
+                  items={[
+                    { label: "Active users", value: overview.uniqueUsers },
+                    { label: "Pageviews / min", value: overview.totalPageviews },
+                  ]}
+                />
                 <DataTable
                   title={`${filteredRows.length} records`}
+                  description="Top pages in the last hour"
                   rows={filteredRows}
                   columns={columns}
                   selected={selected}
                   onSelect={setSelected}
                 />
-              </>
+              </div>
             ) : null}
 
             {!loading && model !== "overview" && model !== "live" ? (
-              <div className={secondaryRows.length ? "split-panels" : undefined}>
+              <div className={secondaryRows.length ? "grid gap-6 xl:grid-cols-2" : "space-y-6"}>
                 <DataTable
                   title={`${filteredRows.length} records`}
                   rows={filteredRows}
@@ -246,112 +242,13 @@ export default function App() {
                 ) : null}
               </div>
             ) : null}
-          </div>
+          </main>
 
           {selected ? (
-            <aside className="detail-panel">
-              <h3>Record details</h3>
-              {Object.entries(selected).map(([key, value]) => (
-                <div key={key} className="detail-row">
-                  <div className="detail-key">{key}</div>
-                  <div className="detail-value">{formatCell(value)}</div>
-                </div>
-              ))}
-            </aside>
+            <RecordDetailPanel record={selected} onClose={() => setSelected(null)} />
           ) : null}
         </div>
       </div>
     </div>
   );
-}
-
-function MetricCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="metric-card">
-      <div className="metric-label">{label}</div>
-      <div className="metric-value">{value.toLocaleString()}</div>
-    </div>
-  );
-}
-
-function EmptyHint() {
-  return (
-    <div className="empty-state">
-      <h2>No events yet</h2>
-      <p>Install the SDK, run your app, and events will appear here automatically in development.</p>
-      <p>
-        <code>bun add @insyte/track</code> · <code>npx insyte studio</code>
-      </p>
-    </div>
-  );
-}
-
-function DataTable({
-  title,
-  rows,
-  columns,
-  selected,
-  onSelect,
-  emptyLabel,
-}: {
-  title: string;
-  rows: Record<string, unknown>[];
-  columns: string[];
-  selected: Record<string, unknown> | null;
-  onSelect: (row: Record<string, unknown>) => void;
-  emptyLabel?: string;
-}) {
-  if (rows.length === 0) {
-    return (
-      <div className="empty-state">
-        <h2>No {emptyLabel ?? "records"} yet</h2>
-        <p>Send analytics from your app using the Insyte SDK.</p>
-        <p>
-          <code>analytics.track("button_clicked")</code>
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="table-panel">
-      <div className="table-toolbar">
-        <span>{title}</span>
-        <span>{columns.length} fields</span>
-      </div>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th key={column}>{column}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr
-                key={index}
-                className={selected === row ? "selected" : ""}
-                onClick={() => onSelect(row)}
-              >
-                {columns.map((column) => (
-                  <td key={column} className="cell-mono">
-                    {formatCell(row[column])}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function formatCell(value: unknown): string {
-  if (value === null || value === undefined) return "—";
-  if (value instanceof Date) return value.toISOString();
-  if (typeof value === "object") return JSON.stringify(value, null, 2);
-  return String(value);
 }
