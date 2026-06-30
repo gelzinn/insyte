@@ -1,7 +1,6 @@
-import { ArrowUpIcon, Bot, Check, MessageCircleDashedIcon, MoreVertical } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import { ArrowUpIcon, Bot, Check, MessageCircleDashedIcon, MoreVertical, Square } from "lucide-react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { ChatMessageItem } from "@/components/chat-message-item";
-import { ChatMessageThinkingItem } from "@/components/chat-message-thinking-item";
 import { AssistantSettingsDialog } from "@/components/assistant-settings-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,6 +47,7 @@ import {
   loadAssistantConfig,
   saveAssistantConfig,
 } from "@/lib/ai-providers";
+import { streamChat } from "@/lib/chat-api";
 import {
   type ChatMessage,
   createMessageMeta,
@@ -71,34 +71,8 @@ function migrateLegacyConfig(config: AssistantConfig): AssistantConfig {
   return next;
 }
 
-async function postChat(
-  config: AssistantConfig,
-  messages: ChatMessage[],
-  context: string,
-): Promise<string> {
-  const response = await fetch("/api/ai/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      providerId: config.providerId,
-      apiKey: config.apiKey,
-      baseUrl: config.baseUrl,
-      model: config.model,
-      messages: messages.map(({ role, content }) => ({ role, content })),
-      context,
-    }),
-  });
-
-  const payload = (await response.json()) as { error?: string; message?: string };
-  if (!response.ok) {
-    throw new Error(payload.error ?? "Chat request failed.");
-  }
-
-  if (!payload.message) {
-    throw new Error("Assistant returned an empty response.");
-  }
-
-  return payload.message;
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
 }
 
 export function AssistantChat({ context }: AssistantChatProps) {
@@ -109,7 +83,9 @@ export function AssistantChat({ context }: AssistantChatProps) {
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sending, setSending] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const provider = getProvider(config);
 
@@ -133,6 +109,20 @@ export function AssistantChat({ context }: AssistantChatProps) {
     setSettingsOpen(true);
   }
 
+  function handleCancel() {
+    abortRef.current?.abort();
+  }
+
+  function removeEmptyAssistantMessage(assistantId: string) {
+    setMessages((current) => {
+      const assistant = current.find((message) => message.id === assistantId);
+      if (assistant && !assistant.content.trim()) {
+        return current.filter((message) => message.id !== assistantId);
+      }
+      return current;
+    });
+  }
+
   async function handleSend(event?: FormEvent) {
     event?.preventDefault();
     const text = draft.trim();
@@ -150,6 +140,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
     }
 
     const messageMeta = createMessageMeta(config.providerId, config.model);
+    const assistantId = crypto.randomUUID();
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -162,23 +153,46 @@ export function AssistantChat({ context }: AssistantChatProps) {
     setDraft("");
     setError(null);
     setSending(true);
-    setMessages(nextMessages);
+    setStreamingMessageId(assistantId);
+    setMessages([
+      ...nextMessages,
+      {
+        id: assistantId,
+        role: "assistant",
+        content: "",
+        meta: messageMeta,
+      },
+    ]);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
-      const reply = await postChat(config, nextMessages, context);
-      setMessages([
-        ...nextMessages,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: reply,
-          meta: messageMeta,
+      await streamChat(config, nextMessages, context, {
+        signal: controller.signal,
+        onToken: (token) => {
+          setMessages((current) =>
+            current.map((message) =>
+              message.id === assistantId
+                ? { ...message, content: message.content + token }
+                : message,
+            ),
+          );
         },
-      ]);
+      });
+      removeEmptyAssistantMessage(assistantId);
     } catch (err) {
+      if (isAbortError(err) || controller.signal.aborted) {
+        removeEmptyAssistantMessage(assistantId);
+        return;
+      }
+
+      removeEmptyAssistantMessage(assistantId);
       setError(err instanceof Error ? err.message : "Failed to reach the assistant.");
     } finally {
       setSending(false);
+      setStreamingMessageId(null);
+      abortRef.current = null;
     }
   }
 
@@ -253,18 +267,14 @@ export function AssistantChat({ context }: AssistantChatProps) {
                   {messages.map((message) => (
                     <MessageScrollerItem
                       key={message.id}
-                      scrollAnchor={message.role === "user"}
+                      scrollAnchor={message.role === "user" || message.id === streamingMessageId}
                     >
-                      <ChatMessageItem message={message} />
-                    </MessageScrollerItem>
-                  ))}
-                  {sending ? (
-                    <MessageScrollerItem>
-                      <ChatMessageThinkingItem
-                        meta={createMessageMeta(config.providerId, config.model)}
+                      <ChatMessageItem
+                        message={message}
+                        isStreaming={message.id === streamingMessageId}
                       />
                     </MessageScrollerItem>
-                  ) : null}
+                  ))}
                 </MessageScrollerContent>
               </MessageScrollerViewport>
               <MessageScrollerButton />
@@ -277,20 +287,20 @@ export function AssistantChat({ context }: AssistantChatProps) {
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
+                  if (event.key === "Enter" && !event.shiftKey && !sending) {
                     event.preventDefault();
                     void handleSend();
                   }
                 }}
                 placeholder="Ask about your analytics…"
                 rows={2}
-                disabled={sending}
               />
               <InputGroupAddon align="block-end" className="gap-1 pt-1">
                 {provider.models.length > 0 ? (
                   <Select
                     value={config.model}
                     onValueChange={(value) => updateConfig({ ...config, model: value })}
+                    disabled={sending}
                   >
                     <SelectTrigger className="h-8 w-[9.5rem] cursor-pointer border-border/50 bg-muted px-2 text-xs shadow-none hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring/30">
                       <SelectValue placeholder="Model" />
@@ -310,18 +320,20 @@ export function AssistantChat({ context }: AssistantChatProps) {
                       updateConfig({ ...config, model: event.target.value })
                     }
                     placeholder="Model ID"
-                    className="h-8 w-[9.5rem] rounded-lg border border-border/50 bg-muted px-2 text-xs outline-none placeholder:text-muted-foreground hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring/30"
+                    disabled={sending}
+                    className="h-8 w-[9.5rem] rounded-lg border border-border/50 bg-muted px-2 text-xs outline-none placeholder:text-muted-foreground hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 )}
                 <InputGroupButton
-                  type="submit"
+                  type={sending ? "button" : "submit"}
                   variant="default"
                   size="icon-sm"
-                  disabled={sending || !draft.trim()}
+                  disabled={!sending && !draft.trim()}
                   className="ml-auto"
+                  onClick={sending ? handleCancel : undefined}
                 >
-                  <ArrowUpIcon />
-                  <span className="sr-only">Send</span>
+                  {sending ? <Square className="size-3.5 fill-current" /> : <ArrowUpIcon />}
+                  <span className="sr-only">{sending ? "Stop generating" : "Send"}</span>
                 </InputGroupButton>
               </InputGroupAddon>
             </InputGroup>

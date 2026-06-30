@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 
 interface ChatMessageItemProps {
   message: ChatMessage;
+  isStreaming?: boolean;
 }
 
 function MessageInfoDialog({
@@ -77,7 +78,7 @@ function MessageInfoDialog({
   );
 }
 
-export function ChatMessageItem({ message }: ChatMessageItemProps) {
+export function ChatMessageItem({ message, isStreaming = false }: ChatMessageItemProps) {
   const [infoOpen, setInfoOpen] = useState(false);
   const isUser = message.role === "user";
   const displayName = getMessageDisplayName(message);
@@ -118,17 +119,22 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
             >
               <BubbleContent className="relative">
                 {!isUser ? (
-                  <MarkdownMessage content={message.content} />
+                  message.content ? (
+                    <MarkdownMessage content={message.content} />
+                  ) : (
+                    <span className="shimmer text-sm text-muted-foreground">Thinking…</span>
+                  )
                 ) : (
                   message.content
                 )}
 
-                <div
-                  className={cn(
-                    "absolute top-0 z-10 opacity-0 transition-opacity group-hover/bubble-row:opacity-100 has-[[data-state=open]]:opacity-100",
-                    isUser ? "left-0" : "right-0",
-                  )}
-                >
+                {!isStreaming ? (
+                  <div
+                    className={cn(
+                      "absolute top-0 z-10 opacity-0 transition-opacity group-hover/bubble-row:opacity-100 has-[[data-state=open]]:opacity-100",
+                      isUser ? "left-0" : "right-0",
+                    )}
+                  >
                   <div
                     aria-hidden="true"
                     className={cn(
@@ -175,6 +181,7 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+                ) : null}
               </BubbleContent>
             </Bubble>
           </div>
