@@ -18,15 +18,11 @@ analytics-monorepo/
 │       ├── tsconfig.json
 │       └── tsup.config.ts
 ├── apps/
-│   └── test/                   # App Next.js de demonstração
-│       ├── src/app/
-│       │   ├── page.tsx        # Dashboard de analytics
-│       │   ├── blog/           # Página de blog
-│       │   ├── produto/[id]/   # Páginas de produto
-│       │   └── api/analytics/  # API routes
-│       ├── prisma/             # Schema do banco de dados
-│       ├── package.json
-│       └── next.config.js
+│   ├── test-next/              # Demo Next.js
+│   ├── test-react/             # Demo React + Vite
+│   ├── test-vue/               # Demo Vue 3 + Vite
+│   ├── test-angular/           # Demo Angular 19
+│   └── README.md
 ├── pnpm-workspace.yaml         # Configuração do workspace
 ├── turbo.json                  # Configuração do Turborepo
 ├── package.json                # Scripts do monorepo
@@ -49,8 +45,17 @@ bun install
 # Construir a biblioteca de analytics
 bun run build:lib
 
-# Construir o app de demonstração
-bun run build:app
+# Construir demos
+bun run build:apps
+
+# Rodar demo específica
+bun run dev:next      # http://localhost:3000
+bun run dev:react     # http://localhost:5173
+bun run dev:vue       # http://localhost:5174
+bun run dev:angular   # http://localhost:4200
+
+# Rodar todas as demos
+bun run dev:apps
 ```
 
 ## 📊 Biblioteca de Analytics (servidor)

@@ -12,12 +12,18 @@
   "scripts": {
     "build": "turbo run build --filter=*",
     "build:lib": "turbo run build --filter=analytics... --filter=@insyte/track...",
-    "build:app": "cd apps/test && npm run build",
+    "build:app": "turbo run build --filter=test-next...",
+    "build:apps": "turbo run build --filter=test-next --filter=test-react --filter=test-vue --filter=test-angular",
     "clean": "turbo run clean",
     "dev": "turbo run dev --filter=*",
     "dev:lib": "turbo run dev --filter=analytics... --filter=@insyte/track...",
-    "dev:app": "cd apps/test && bun run dev",
-    "start:app": "cd apps/test && bun run start",
+    "dev:next": "cd apps/test-next && bun run dev",
+    "dev:react": "cd apps/test-react && bun run dev",
+    "dev:vue": "cd apps/test-vue && bun run dev",
+    "dev:angular": "cd apps/test-angular && bun run start",
+    "dev:apps": "turbo run dev --filter=test-next --filter=test-react --filter=test-vue --filter=test-angular --parallel",
+    "dev:app": "cd apps/test-next && bun run dev",
+    "start:app": "cd apps/test-next && bun run start",
     "type-check": "turbo run type-check",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
@@ -29,7 +35,7 @@
     "example": "bun run example.ts",
     "setup-db": "bun run scripts/setup-database.ts",
     "migrate-db": "bun run scripts/migrate-database.ts",
-    "test:app": "cd apps/test && bun run dev"
+    "test:app": "cd apps/test-next && bun run dev"
   },
   "keywords": [
     "typescript",
@@ -43,6 +49,9 @@
     "redis"
   ],
   "license": "MIT",
+  "overrides": {
+    "typescript": "5.7.3"
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.2.0",
     "@types/jest": "^29.5.0",
