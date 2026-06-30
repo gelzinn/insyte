@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { TrackDemoButton } from "./components/track-demo-button";
 
 interface BounceRate {
   bounceRate: number;
@@ -157,12 +158,15 @@ export default function AnalyticsDashboard() {
                 Monitor your website performance in real-time
               </p>
             </div>
-            <button
+            <div className="flex items-center gap-3">
+              <TrackDemoButton />
+              <button
               onClick={simulatePageView}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
               Simulate Page View
             </button>
+            </div>
           </div>
         </div>
       </header>

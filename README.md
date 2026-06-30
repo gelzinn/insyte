@@ -53,7 +53,7 @@ bun run build:lib
 bun run build:app
 ```
 
-## 📊 Biblioteca de Analytics
+## 📊 Biblioteca de Analytics (servidor)
 
 ### Funcionalidades Principais
 

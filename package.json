@@ -11,11 +11,11 @@
   ],
   "scripts": {
     "build": "turbo run build --filter=*",
-    "build:lib": "turbo run build --filter=analytics...",
+    "build:lib": "turbo run build --filter=analytics... --filter=@insyte/track...",
     "build:app": "cd apps/test && npm run build",
     "clean": "turbo run clean",
     "dev": "turbo run dev --filter=*",
-    "dev:lib": "turbo run dev --filter=analytics...",
+    "dev:lib": "turbo run dev --filter=analytics... --filter=@insyte/track...",
     "dev:app": "cd apps/test && bun run dev",
     "start:app": "cd apps/test && bun run start",
     "type-check": "turbo run type-check",
@@ -57,7 +57,6 @@
     "npm-run-all": "^4.1.5"
   },
   "dependencies": {
-    "analytics": "workspace:*",
     "dotenv": "^16.0.0",
     "mongodb": "^6.0.0",
     "mysql2": "^3.6.0",
