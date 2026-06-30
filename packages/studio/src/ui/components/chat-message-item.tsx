@@ -116,63 +116,66 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
               align={isUser ? "end" : "start"}
               className="group/bubble-row max-w-full"
             >
-              <BubbleContent>
+              <BubbleContent className="relative">
                 {!isUser ? (
                   <MarkdownMessage content={message.content} />
                 ) : (
                   message.content
                 )}
-              </BubbleContent>
 
-              <div
-                className={cn(
-                  "absolute top-0 z-10 min-h-9 min-w-11 p-1 opacity-0 transition-opacity group-hover/bubble-row:opacity-100 has-[[data-state=open]]:opacity-100",
-                  isUser ? "left-0" : "right-0",
-                )}
-              >
                 <div
-                  aria-hidden="true"
                   className={cn(
-                    "pointer-events-none absolute inset-0",
-                    isUser
-                      ? "rounded-tl-xl bg-gradient-to-r from-primary via-primary/90 to-transparent"
-                      : "rounded-tr-xl bg-gradient-to-l from-muted via-muted/90 to-transparent",
+                    "absolute top-0 z-10 opacity-0 transition-opacity group-hover/bubble-row:opacity-100 has-[[data-state=open]]:opacity-100",
+                    isUser ? "left-0" : "right-0",
                   )}
-                />
+                >
+                  <div
+                    aria-hidden="true"
+                    className={cn(
+                      "pointer-events-none absolute top-0 h-9 w-12",
+                      isUser
+                        ? "left-0 rounded-tl-xl bg-gradient-to-r from-primary via-primary/90 to-transparent"
+                        : "right-0 rounded-tr-xl bg-gradient-to-l from-muted via-muted/90 to-transparent",
+                    )}
+                  />
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      className={cn(
-                        "relative z-[1] size-7 cursor-pointer",
-                        isUser
-                          ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-                          : "hover:bg-foreground/5",
-                      )}
-                      aria-label="Message actions"
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        className={cn(
+                          "relative z-[1] size-7 cursor-pointer",
+                          isUser
+                            ? "rounded-tl-xl text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                            : "rounded-tr-xl hover:bg-foreground/5",
+                        )}
+                        aria-label="Message actions"
+                      >
+                        <MoreHorizontal className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align={isUser ? "start" : "end"}
+                      side="bottom"
+                      sideOffset={2}
+                      alignOffset={0}
+                      collisionPadding={0}
+                      avoidCollisions={false}
+                      className="w-44"
                     >
-                      <MoreHorizontal className="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align={isUser ? "start" : "end"}
-                    side="bottom"
-                    sideOffset={4}
-                    className="w-44"
-                  >
-                    <DropdownMenuItem
-                      className="cursor-pointer"
-                      onClick={() => setInfoOpen(true)}
-                    >
-                      <Info className="size-4" />
-                      Message info
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => setInfoOpen(true)}
+                      >
+                        <Info className="size-4" />
+                        Message info
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </BubbleContent>
             </Bubble>
           </div>
         </MessageContent>
