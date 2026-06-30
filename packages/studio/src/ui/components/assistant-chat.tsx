@@ -1,8 +1,8 @@
 import { ArrowUpIcon, Bot, Check, MessageCircleDashedIcon, MoreVertical } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
-import { MarkdownMessage } from "@/components/markdown-message";
+import { ChatMessageItem } from "@/components/chat-message-item";
+import { ChatMessageThinkingItem } from "@/components/chat-message-thinking-item";
 import { AssistantSettingsDialog } from "@/components/assistant-settings-dialog";
-import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,8 +25,6 @@ import {
   InputGroupButton,
   InputGroupTextarea,
 } from "@/components/ui/input-group";
-import { Marker, MarkerContent } from "@/components/ui/marker";
-import { Message, MessageContent } from "@/components/ui/message";
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -50,14 +48,14 @@ import {
   loadAssistantConfig,
   saveAssistantConfig,
 } from "@/lib/ai-providers";
+import {
+  type ChatMessage,
+  createMessageMeta,
+} from "@/lib/chat-message";
 
 const LEGACY_API_KEY_STORAGE = "insyte.openrouter.apiKey";
 
-export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
+export type { ChatMessage } from "@/lib/chat-message";
 
 interface AssistantChatProps {
   context: string;
@@ -151,10 +149,13 @@ export function AssistantChat({ context }: AssistantChatProps) {
       return;
     }
 
+    const messageMeta = createMessageMeta(config.providerId, config.model);
+
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
       content: text,
+      meta: messageMeta,
     };
 
     const nextMessages = [...messages, userMessage];
@@ -167,7 +168,12 @@ export function AssistantChat({ context }: AssistantChatProps) {
       const reply = await postChat(config, nextMessages, context);
       setMessages([
         ...nextMessages,
-        { id: crypto.randomUUID(), role: "assistant", content: reply },
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: reply,
+          meta: messageMeta,
+        },
       ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reach the assistant.");
@@ -249,33 +255,14 @@ export function AssistantChat({ context }: AssistantChatProps) {
                       key={message.id}
                       scrollAnchor={message.role === "user"}
                     >
-                      <Message align={message.role === "user" ? "end" : "start"}>
-                        <MessageContent>
-                          <Bubble
-                            variant={message.role === "user" ? "default" : "muted"}
-                            align={message.role === "user" ? "end" : "start"}
-                          >
-                            <BubbleContent>
-                              {message.role === "assistant" ? (
-                                <MarkdownMessage content={message.content} />
-                              ) : (
-                                message.content
-                              )}
-                            </BubbleContent>
-                          </Bubble>
-                        </MessageContent>
-                      </Message>
+                      <ChatMessageItem message={message} />
                     </MessageScrollerItem>
                   ))}
                   {sending ? (
                     <MessageScrollerItem>
-                      <Marker>
-                        <MarkerContent>
-                          <span className="shimmer text-sm text-muted-foreground">
-                            Thinking…
-                          </span>
-                        </MarkerContent>
-                      </Marker>
+                      <ChatMessageThinkingItem
+                        meta={createMessageMeta(config.providerId, config.model)}
+                      />
                     </MessageScrollerItem>
                   ) : null}
                 </MessageScrollerContent>
@@ -305,7 +292,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
                     value={config.model}
                     onValueChange={(value) => updateConfig({ ...config, model: value })}
                   >
-                    <SelectTrigger className="h-8 w-[9.5rem] cursor-pointer border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+                    <SelectTrigger className="h-8 w-[9.5rem] cursor-pointer border-border/50 bg-muted px-2 text-xs shadow-none hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring/30">
                       <SelectValue placeholder="Model" />
                     </SelectTrigger>
                     <SelectContent>
@@ -323,7 +310,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
                       updateConfig({ ...config, model: event.target.value })
                     }
                     placeholder="Model ID"
-                    className="h-8 w-[9.5rem] bg-transparent px-2 text-xs outline-none placeholder:text-muted-foreground"
+                    className="h-8 w-[9.5rem] rounded-lg border border-border/50 bg-muted px-2 text-xs outline-none placeholder:text-muted-foreground hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring/30"
                   />
                 )}
                 <InputGroupButton

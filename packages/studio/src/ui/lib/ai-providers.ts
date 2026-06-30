@@ -15,6 +15,7 @@ export interface ProviderDefinition {
   models: ProviderModel[];
   setupSteps: string[];
   apiKeyPlaceholder: string;
+  iconUrl?: string;
 }
 
 export const AI_PROVIDERS: Record<ProviderId, ProviderDefinition> = {
@@ -26,6 +27,7 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDefinition> = {
     defaultBaseUrl: "https://openrouter.ai/api/v1",
     defaultModel: "openrouter/free",
     apiKeyPlaceholder: "sk-or-...",
+    iconUrl: "https://openrouter.ai/favicon.ico",
     models: [
       { id: "openrouter/free", label: "Free router" },
       { id: "google/gemma-2-9b-it:free", label: "Gemma 2 9B (free)" },
@@ -46,6 +48,7 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDefinition> = {
     defaultBaseUrl: "https://api.groq.com/openai/v1",
     defaultModel: "llama-3.3-70b-versatile",
     apiKeyPlaceholder: "gsk_...",
+    iconUrl: "https://svgl.app/library/groq.svg",
     models: [
       { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
       { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant" },
@@ -68,6 +71,7 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDefinition> = {
     defaultBaseUrl: "https://api.x.ai/v1",
     defaultModel: "grok-4-fast-non-reasoning",
     apiKeyPlaceholder: "xai-...",
+    iconUrl: "https://svgl.app/library/x.svg",
     models: [
       { id: "grok-4-fast-non-reasoning", label: "Grok 4 Fast" },
       { id: "grok-3-mini", label: "Grok 3 Mini" },
@@ -157,4 +161,15 @@ export function getModelLabel(config: AssistantConfig): string {
   const match = provider.models.find((model) => model.id === config.model);
   if (match) return match.label;
   return config.model || provider.defaultModel || "No model";
+}
+
+export function getModelLabelForProvider(providerId: ProviderId, modelId: string): string {
+  const provider = AI_PROVIDERS[providerId] ?? AI_PROVIDERS.openrouter;
+  const match = provider.models.find((model) => model.id === modelId);
+  if (match) return match.label;
+  return modelId || provider.defaultModel || "No model";
+}
+
+export function getProviderIconUrl(providerId: ProviderId): string | undefined {
+  return AI_PROVIDERS[providerId]?.iconUrl;
 }

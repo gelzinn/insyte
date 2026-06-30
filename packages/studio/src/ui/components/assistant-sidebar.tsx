@@ -212,7 +212,7 @@ export function AssistantSidebarTrigger({
       data-slot="assistant-sidebar-trigger"
       variant="ghost"
       size="icon-sm"
-      className={cn("size-8", className)}
+      className={cn("size-8 shrink-0", className)}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
@@ -220,7 +220,7 @@ export function AssistantSidebarTrigger({
       title="Toggle assistant (])"
       {...props}
     >
-      <PanelRightIcon />
+      <PanelRightIcon className="size-4" />
       <span className="sr-only">Toggle Assistant</span>
     </Button>
   );

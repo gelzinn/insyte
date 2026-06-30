@@ -3,7 +3,6 @@ import type { ModelId } from "@/lib/models";
 interface StudioContextInput {
   model: ModelId;
   modelLabel: string;
-  filter: string;
   overview?: {
     totalPageviews: number;
     totalEvents: number;
@@ -27,7 +26,7 @@ export function buildStudioContext(input: StudioContextInput): string {
     {
       currentView: input.modelLabel,
       viewId: input.model,
-      activeFilter: input.filter || null,
+      activeFilter: null,
       overview: input.overview,
       live: input.liveOverview,
       counts: input.counts,
