@@ -157,10 +157,10 @@ export interface ConsentBannerProps {
 }
 
 export function ConsentBanner({
-  title = "Este site usa cookies",
-  description = "Usamos analytics para melhorar sua experiência. Você pode aceitar ou recusar o rastreamento.",
-  acceptLabel = "Aceitar",
-  rejectLabel = "Recusar",
+  title = "This site uses cookies",
+  description = "We use analytics to improve your experience. You can accept or decline tracking.",
+  acceptLabel = "Accept",
+  rejectLabel = "Decline",
   className,
   onAccept,
   onReject,

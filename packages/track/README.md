@@ -1,16 +1,16 @@
 # @insyte/track
 
-Biblioteca unificada para integrar analytics em projetos JavaScript — funciona com **React**, **Vue**, **Angular**, **Vite**, **Next.js** e vanilla JS.
+Unified analytics integration for JavaScript projects — works with **React**, **Vue**, **Angular**, **Vite**, **Next.js**, and vanilla JS.
 
-## Instalação
+## Installation
 
 ```bash
 npm install @insyte/track
-# ou
+# or
 bun add @insyte/track
 ```
 
-## Setup rápido
+## Quick start
 
 ### Vanilla / Vite
 
@@ -95,7 +95,7 @@ app.use(
 app.mount("#app");
 ```
 
-### Angular (plugin nativo)
+### Angular (native plugin)
 
 ```typescript
 // main.ts
@@ -129,25 +129,25 @@ export class SignupComponent {
 }
 ```
 
-## Providers built-in
+## Built-in providers
 
-| Provider | Função | Identificação |
-|----------|--------|---------------|
-| `googleAnalytics` | GA4 | ✅ |
-| `mixpanel` | Mixpanel | ✅ |
-| `posthog` | PostHog | ✅ |
-| `segment` | Segment | ✅ |
-| `amplitude` | Amplitude | ✅ |
-| `plausible` | Plausible | ❌ |
-| `heap` | Heap | ✅ |
-| `rudderstack` | RudderStack | ✅ |
-| `hotjar` | Hotjar | ✅ |
-| `facebookPixel` | Meta Pixel | ❌ |
-| `clarity` | Microsoft Clarity | ✅ |
+| Provider | Service | User identification |
+|----------|---------|---------------------|
+| `googleAnalytics` | GA4 | Yes |
+| `mixpanel` | Mixpanel | Yes |
+| `posthog` | PostHog | Yes |
+| `segment` | Segment | Yes |
+| `amplitude` | Amplitude | Yes |
+| `plausible` | Plausible | No |
+| `heap` | Heap | Yes |
+| `rudderstack` | RudderStack | Yes |
+| `hotjar` | Hotjar | Yes |
+| `facebookPixel` | Meta Pixel | No |
+| `clarity` | Microsoft Clarity | Yes |
 
 ## Consent / GDPR
 
-Só inicializa providers após consentimento do usuário:
+Providers only initialize after user consent:
 
 ```typescript
 import { setupAnalytics, googleAnalytics, facebookPixel } from "@insyte/track";
@@ -161,18 +161,18 @@ const analytics = await setupAnalytics({
   },
   providers: [
     googleAnalytics({ measurementId: "G-XXX" }),
-    facebookPixel({ pixelId: "123" }), // categoria marketing
+    facebookPixel({ pixelId: "123" }), // marketing category
   ],
 });
 
-// Após o usuário aceitar
+// After the user accepts
 analytics.grantConsent(["analytics", "marketing"]);
 await analytics.init();
 ```
 
-React inclui `<ConsentBanner />` e hook `useConsent()`.
+React includes `<ConsentBanner />` and the `useConsent()` hook.
 
-## Provider customizado
+## Custom provider
 
 ```typescript
 import { createCustomProvider, setupAnalytics } from "@insyte/track";
@@ -190,16 +190,16 @@ await setupAnalytics({ providers: [myProvider] });
 
 ## Exports
 
-| Export | Descrição |
-|--------|-----------|
+| Export | Description |
+|--------|-------------|
 | `@insyte/track` | Core + consent + providers |
 | `@insyte/track/react` | Provider, hooks, ConsentBanner |
-| `@insyte/track/vue` | Plugin Vue 3 |
+| `@insyte/track/vue` | Vue 3 plugin |
 | `@insyte/track/angular` | `InsyteAnalyticsService`, `provideInsyteAnalytics` |
 | `@insyte/track/next` | Middleware, script definitions, SSR helpers |
-| `@insyte/track/next/client` | `<AnalyticsScripts />` com `next/script` |
-| `@insyte/track/providers` | Apenas os providers |
+| `@insyte/track/next/client` | `<AnalyticsScripts />` with `next/script` |
+| `@insyte/track/providers` | Providers only |
 
-## Licença
+## License
 
 MIT

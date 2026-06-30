@@ -25,9 +25,9 @@ const mockData = {
       topSources: [],
     },
     {
-      url: "http://localhost:3000/produto/1",
-      path: "/produto/1",
-      title: "Produto 1",
+      url: "http://localhost:3000/product/1",
+      path: "/product/1",
+      title: "Product 1",
       views: 78,
       uniqueViews: 65,
       averageTimeOnPage: 120,
@@ -58,7 +58,7 @@ const mockData = {
     pageViewsPerMinute: 8,
     topPages: [
       { url: "/", views: 45 },
-      { url: "/produto/1", views: 23 },
+      { url: "/product/1", views: 23 },
     ],
   },
 };

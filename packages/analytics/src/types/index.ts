@@ -7,7 +7,7 @@ export interface PageView {
   hostname: string;
   referrer?: string;
   timestamp: Date;
-  duration?: number; // em segundos
+  duration?: number; // in seconds
   isExit?: boolean;
   isBounce?: boolean;
 }
@@ -88,7 +88,7 @@ export interface UTMParams {
 export interface BounceRate {
   totalSessions: number;
   bouncedSessions: number;
-  bounceRate: number; // em %
+  bounceRate: number; // in %
   averageSessionDuration: number;
   period: {
     start: Date;
@@ -228,11 +228,11 @@ export interface AnalyticsConfig {
     options?: Record<string, any>;
   };
   tracking: {
-    sessionTimeout: number; // em minutos
+    sessionTimeout: number; // in minutes
     enableRealTime: boolean;
     enableGeolocation: boolean;
     enableUTMTracking: boolean;
-    excludedPaths: string[]; // paths que não devem ser rastreados
+    excludedPaths: string[]; // paths that should not be tracked
   };
   tables?: {
     pageviews?: string;

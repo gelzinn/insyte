@@ -3,13 +3,13 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 
-interface ProdutoPageProps {
+interface ProductPageProps {
   params: {
     id: string
   }
 }
 
-export default function ProdutoPage({ params }: ProdutoPageProps) {
+export default function ProductPage({ params }: ProductPageProps) {
   const trackPageView = async () => {
     try {
       const response = await fetch('/api/analytics', {
@@ -20,7 +20,7 @@ export default function ProdutoPage({ params }: ProdutoPageProps) {
           sessionId: `session_${Date.now()}`,
           userId: `user_${Math.floor(Math.random() * 1000)}`,
           url: window.location.href,
-          title: `Produto ${params.id} - Demo Store`,
+          title: `Product ${params.id} - Demo Store`,
           referrer: document.referrer || undefined,
           userAgent: navigator.userAgent,
           ip: '127.0.0.1',
@@ -41,10 +41,8 @@ export default function ProdutoPage({ params }: ProdutoPageProps) {
   }
 
   useEffect(() => {
-    // Track page view when component mounts
     trackPageView()
 
-    // Track page exit when component unmounts
     return () => {
       fetch('/api/analytics', {
         method: 'POST',
@@ -53,7 +51,7 @@ export default function ProdutoPage({ params }: ProdutoPageProps) {
           action: 'trackPageExit',
           sessionId: `session_${Date.now()}`,
           url: window.location.href,
-          duration: 30 // Simulate 30 seconds on page
+          duration: 30
         })
       }).catch(console.error)
     }
@@ -80,30 +78,28 @@ export default function ProdutoPage({ params }: ProdutoPageProps) {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="md:flex">
-            {/* Product Image */}
             <div className="md:flex-shrink-0">
               <div className="h-96 w-full md:w-96 bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center">
                 <span className="text-6xl">📱</span>
               </div>
             </div>
 
-            {/* Product Details */}
             <div className="p-8">
               <div className="uppercase tracking-wide text-sm text-indigo-600 font-semibold">
-                Produto #{params.id}
+                Product #{params.id}
               </div>
               <h1 className="mt-2 text-3xl leading-8 font-bold text-gray-900">
-                Smartphone Premium {params.id}
+                Premium Smartphone {params.id}
               </h1>
               <p className="mt-4 text-gray-600">
-                Este é um produto de demonstração para testar a biblioteca de analytics.
-                A página atual está sendo rastreada automaticamente quando você a visita.
+                This is a demo product page to test the analytics library.
+                The current page is tracked automatically when you visit it.
               </p>
 
               <div className="mt-6">
                 <div className="flex items-center">
-                  <span className="text-3xl font-bold text-gray-900">R$ 2.999,00</span>
-                  <span className="ml-3 text-sm text-gray-500 line-through">R$ 3.499,00</span>
+                  <span className="text-3xl font-bold text-gray-900">$599.00</span>
+                  <span className="ml-3 text-sm text-gray-500 line-through">$699.00</span>
                 </div>
                 <div className="mt-4 flex items-center">
                   <div className="flex items-center">
@@ -111,58 +107,57 @@ export default function ProdutoPage({ params }: ProdutoPageProps) {
                       <span key={star} className="text-yellow-400">⭐</span>
                     ))}
                   </div>
-                  <span className="ml-2 text-sm text-gray-600">(127 avaliações)</span>
+                  <span className="ml-2 text-sm text-gray-600">(127 reviews)</span>
                 </div>
               </div>
 
               <div className="mt-8 space-y-4">
                 <div className="flex items-center text-sm text-gray-600">
                   <span className="mr-2">📊</span>
-                  <span>Dados de analytics sendo coletados automaticamente</span>
+                  <span>Analytics data collected automatically</span>
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <span className="mr-2">🎯</span>
-                  <span>Parâmetros UTM incluídos na demonstração</span>
+                  <span>UTM parameters included in this demo</span>
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <span className="mr-2">⏱️</span>
-                  <span>Tempo na página sendo rastreado</span>
+                  <span>Time on page is being tracked</span>
                 </div>
               </div>
 
               <div className="mt-8 flex space-x-4">
                 <button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                  Adicionar ao Carrinho
+                  Add to Cart
                 </button>
                 <button className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                  Lista de Desejos
+                  Wishlist
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Analytics Info */}
         <div className="mt-8 bg-blue-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-4">Analytics em Tempo Real</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-4">Real-time Analytics</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h4 className="font-medium text-blue-800">Dados Coletados:</h4>
+              <h4 className="font-medium text-blue-800">Collected data:</h4>
               <ul className="mt-2 text-sm text-blue-700 space-y-1">
-                <li>• URL da página atual</li>
-                <li>• User Agent do navegador</li>
-                <li>• Referrer (se aplicável)</li>
-                <li>• Parâmetros UTM</li>
-                <li>• Tempo na página</li>
+                <li>• Current page URL</li>
+                <li>• Browser user agent</li>
+                <li>• Referrer (if available)</li>
+                <li>• UTM parameters</li>
+                <li>• Time on page</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-medium text-blue-800">Funcionalidades Demonstradas:</h4>
+              <h4 className="font-medium text-blue-800">Features demonstrated:</h4>
               <ul className="mt-2 text-sm text-blue-700 space-y-1">
-                <li>• Rastreamento automático de pageviews</li>
-                <li>• Detecção de fonte de tráfego</li>
-                <li>• Análise de campanhas UTM</li>
-                <li>• Métricas de engajamento</li>
+                <li>• Automatic pageview tracking</li>
+                <li>• Traffic source detection</li>
+                <li>• UTM campaign analysis</li>
+                <li>• Engagement metrics</li>
               </ul>
             </div>
           </div>

@@ -1,76 +1,68 @@
 # Analytics Monorepo
 
-Este é um monorepo que contém uma biblioteca de analytics completa e um aplicativo Next.js de demonstração. O projeto utiliza **bun** como package manager para melhor performance.
+A monorepo containing a full analytics library and demo apps for multiple frameworks. The project uses **bun** as the package manager.
 
-## 📁 Estrutura do Projeto
+## Project structure
 
 ```
 analytics-monorepo/
 ├── packages/
-│   └── analytics/              # Biblioteca principal de analytics
-│       ├── src/
-│       │   ├── index.ts        # Export principal
-│       │   ├── WebAnalyticsEngine.ts
-│       │   ├── database/
-│       │   ├── utils/
-│       │   └── types/
-│       ├── package.json
-│       ├── tsconfig.json
-│       └── tsup.config.ts
+│   ├── analytics/              # Server-side analytics library
+│   └── track/                  # Client-side @insyte/track
 ├── apps/
-│   ├── test-next/              # Demo Next.js
-│   ├── test-react/             # Demo React + Vite
-│   ├── test-vue/               # Demo Vue 3 + Vite
-│   ├── test-angular/           # Demo Angular 19
+│   ├── test-next/              # Next.js demo
+│   ├── test-react/             # React + Vite demo
+│   ├── test-vue/               # Vue 3 + Vite demo
+│   ├── test-angular/           # Angular 19 demo
 │   └── README.md
-├── pnpm-workspace.yaml         # Configuração do workspace
-├── turbo.json                  # Configuração do Turborepo
-├── package.json                # Scripts do monorepo
-└── README.md                   # Este arquivo
+├── pnpm-workspace.yaml
+├── turbo.json
+├── package.json
+└── README.md
 ```
 
-## 🚀 Instalação e Configuração
+## Installation
 
-### Pré-requisitos
+### Prerequisites
 
 - Node.js 18+
-- [bun](https://bun.sh/) - Package manager e runtime JavaScript
+- [bun](https://bun.sh/)
 
-### Instalação
+### Setup
 
 ```bash
-# Instalar dependências do monorepo
+# Install dependencies
 bun install
 
-# Construir a biblioteca de analytics
+# Build libraries
 bun run build:lib
 
-# Construir demos
+# Build demo apps
 bun run build:apps
 
-# Rodar demo específica
+# Run a specific demo
 bun run dev:next      # http://localhost:3000
 bun run dev:react     # http://localhost:5173
 bun run dev:vue       # http://localhost:5174
 bun run dev:angular   # http://localhost:4200
 
-# Rodar todas as demos
+# Run all demos
 bun run dev:apps
 ```
 
-## 📊 Biblioteca de Analytics (servidor)
+## Server-side analytics library
 
-### Funcionalidades Principais
+### Features
 
-- **Rastreamento de Page Views**: Monitora visualizações de página
-- **Análise de Sessões**: Gerenciamento inteligente de sessões
-- **Detecção de Tráfego**: Origem orgânica, paga, social, direta
-- **Análise de Campanhas UTM**: Parâmetros de marketing
-- **Bounce Rate**: Taxa de rejeição
-- **Tempo na Página**: Análise de engajamento
-- **Suporte a Múltiplos Bancos**: SQLite, PostgreSQL, MySQL, MongoDB
+- **Page view tracking**: Monitor page views
+- **Session analysis**: Smart session management
+- **Traffic detection**: Organic, paid, social, direct
+- **UTM campaign analysis**: Marketing parameters
+- **Bounce rate**: Exit rate metrics
+- **Time on page**: Engagement analysis
+- **Multi-database support**: SQLite, PostgreSQL, MySQL, MongoDB
 
-### Uso Básico
+### Basic usage
 
 ```typescript
 import { WebAnalyticsEngine } from "analytics";
@@ -87,10 +79,8 @@ const analytics = new WebAnalyticsEngine({
   },
 });
 
-// Conectar ao banco
 await analytics.connect();
 
-// Rastrear uma pageview
 await analytics.trackPageView({
   sessionId: "session_123",
   url: "https://example.com/page",
@@ -98,16 +88,15 @@ await analytics.trackPageView({
   userAgent: navigator.userAgent,
 });
 
-// Obter métricas
 const bounceRate = await analytics.getBounceRate();
 const pageAnalytics = await analytics.getPageAnalytics();
 ```
 
-## 🎯 @insyte/track — Integração com providers (client-side)
+## @insyte/track — Client-side provider integration
 
-Pacote para integrar **Google Analytics**, **Mixpanel**, **PostHog**, **Segment**, **Amplitude**, **Plausible**, **Facebook Pixel**, **Microsoft Clarity** e **providers customizados** em qualquer app JavaScript.
+Integrate **Google Analytics**, **Mixpanel**, **PostHog**, **Segment**, **Amplitude**, **Plausible**, **Facebook Pixel**, **Microsoft Clarity**, **Hotjar**, **Heap**, **RudderStack**, and **custom providers** in any JavaScript app.
 
-Funciona com React, Vue, Angular, Vite, Next.js e vanilla JS.
+Works with React, Vue, Angular, Vite, Next.js, and vanilla JS.
 
 ```typescript
 import { setupAnalytics, googleAnalytics, mixpanel } from "@insyte/track";
@@ -121,131 +110,76 @@ await setupAnalytics({
 });
 ```
 
-Documentação completa: [`packages/track/README.md`](packages/track/README.md)
+Full documentation: [`packages/track/README.md`](packages/track/README.md)
 
-## 🎯 App de Demonstração (Next.js)
+## Next.js demo app
 
-O app de demonstração mostra como integrar a biblioteca em um projeto real.
-
-### Executar o App
+The demo app shows how to integrate the library in a real project.
 
 ```bash
-# Desenvolver
-bun run dev:app
-
-# Build para produção
+bun run dev:next
 bun run build:app
 bun run start:app
 ```
 
-### Páginas Disponíveis
+### Routes
 
-- **`/`** - Dashboard completo com métricas em tempo real
-- **`/blog`** - Página de blog com rastreamento
-- **`/produto/[id]`** - Páginas dinâmicas de produto
-- **`/api/analytics`** - API endpoints para analytics
+- **`/`** — Analytics dashboard
+- **`/blog`** — Blog page with tracking
+- **`/product/[id]`** — Dynamic product pages
+- **`/api/analytics`** — Analytics API endpoints
 
-### Funcionalidades do Demo
-
-- **Dashboard Interativo**: Visualização de dados em tempo real
-- **Simulação de Dados**: Botão para gerar dados de teste
-- **Rastreamento Automático**: Pageviews rastreadas automaticamente
-- **API Mock**: Dados simulados para demonstração
-
-## 🛠️ Desenvolvimento
-
-### Scripts Disponíveis
+## Development
 
 ```bash
-# Monorepo
-bun run build           # Build de todos os pacotes
-bun run dev             # Desenvolvimento de todos os pacotes
-bun run lint            # Lint de todos os pacotes
-bun run type-check      # Verificação de tipos
+bun run build           # Build all packages
+bun run dev             # Dev mode for all packages
+bun run lint            # Lint all packages
+bun run type-check      # Type check
 
-# Biblioteca
-bun run build:lib       # Build da biblioteca
-bun run dev:lib         # Desenvolvimento da biblioteca
-
-# App
-bun run dev:app         # Desenvolvimento do app Next.js
-bun run build:app       # Build do app Next.js
-bun run start:app       # Executar app em produção
+bun run build:lib       # Build libraries
+bun run dev:lib         # Dev libraries
 ```
 
-### Adicionando Novos Recursos
+### Adding features
 
-#### Na Biblioteca
+**Library:** add code in `packages/analytics/src/` or `packages/track/src/`, update exports, run `bun run build:lib`.
 
-1. Adicione código em `packages/analytics/src/`
-2. Atualize exports em `packages/analytics/src/index.ts`
-3. Execute `pnpm run build:lib`
+**Demo apps:** add pages under `apps/test-*/`, run the matching dev script.
 
-#### No App de Demonstração
-
-1. Adicione páginas em `apps/test/src/app/`
-2. Atualize API routes se necessário
-3. Teste com `pnpm run dev:app`
-
-## 🗄️ Banco de Dados
-
-### Configuração do Prisma
-
-O app de demonstração usa Prisma com SQLite:
+## Database (Next.js demo)
 
 ```bash
-cd apps/test
-npx prisma studio    # Interface visual
-npx prisma db push   # Aplicar mudanças no schema
+cd apps/test-next
+npx prisma studio
+npx prisma db push
 ```
 
-### Schema do Banco
-
-O schema inclui tabelas para:
-
-- `Session` - Sessões de usuário
-- `Pageview` - Visualizações de página
-- `UserInfo` - Informações do usuário
-- `TrafficSource` - Origens de tráfego
-- `RealTimeEvent` - Eventos em tempo real
-- `AnalyticsCache` - Cache de analytics
-
-## 🔧 Configuração
-
-### Variáveis de Ambiente
-
-#### App de Demonstração
+## Environment variables
 
 ```env
 DATABASE_URL="file:./dev.db"
+NEXT_PUBLIC_GA_MEASUREMENT_ID="G-XXXXXXXX"
 ```
 
-#### Produção
+## Roadmap
 
-Configure as variáveis apropriadas para seu banco de dados preferido.
+- [ ] User authentication
+- [ ] Customizable dashboards
+- [x] Google Analytics integration (`@insyte/track`)
+- [ ] Data export
+- [ ] Automated tests
+- [ ] Admin interface
+- [ ] Multi-site / tenant support
 
-## 📈 Próximos Passos
+## Contributing
 
-- [ ] Implementar autenticação de usuário
-- [ ] Adicionar dashboards customizáveis
-- [x] Integrar com Google Analytics (`@insyte/track`)
-- [ ] Implementar exportação de dados
-- [ ] Adicionar testes automatizados
-- [ ] Criar interface de administração
-- [ ] Suporte a múltiplos sites/tenants
+1. Fork the project
+2. Create a feature branch
+3. Implement your changes
+4. Test thoroughly
+5. Open a pull request
 
-## 🤝 Contribuição
+## License
 
-1. Faça fork do projeto
-2. Crie uma branch para sua feature
-3. Implemente suas mudanças
-4. Teste thoroughly
-5. Submeta um pull request
-
-## 📄 Licença
-
-MIT License - veja LICENSE para detalhes.
-
----
-
-**Nota**: Esta é uma implementação completa de analytics que pode ser usada tanto para desenvolvimento quanto produção. O app de demonstração serve como exemplo de integração em projetos Next.js.
+MIT License — see LICENSE for details.

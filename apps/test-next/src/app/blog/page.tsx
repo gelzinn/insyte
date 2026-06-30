@@ -67,9 +67,9 @@ export default function BlogPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Blog da Demo Store</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Demo Store Blog</h1>
           <p className="text-xl text-gray-600">
-            Conteúdo interessante sobre tecnologia, produtos e dicas
+            Interesting content about technology, products, and tips
           </p>
         </div>
 
@@ -80,18 +80,18 @@ export default function BlogPage() {
               <span className="text-4xl">📱</span>
             </div>
             <div className="p-6">
-              <div className="text-sm text-gray-500 mb-2">Tecnologia • 5 min leitura</div>
+              <div className="text-sm text-gray-500 mb-2">Technology • 5 min read</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Como escolher o smartphone ideal para você
+                How to choose the ideal smartphone for you
               </h3>
               <p className="text-gray-600 mb-4">
-                Guia completo para escolher o smartphone que melhor atende às suas necessidades...
+                A complete guide to choosing the smartphone that best fits your needs...
               </p>
               <Link
-                href="/produto/1"
+                href="/product/1"
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
-                Ver produtos relacionados →
+                View related products →
               </Link>
             </div>
           </article>
@@ -102,18 +102,18 @@ export default function BlogPage() {
               <span className="text-4xl">📊</span>
             </div>
             <div className="p-6">
-              <div className="text-sm text-gray-500 mb-2">Analytics • 3 min leitura</div>
+              <div className="text-sm text-gray-500 mb-2">Analytics • 3 min read</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                A importância dos dados na tomada de decisão
+                The importance of data in decision making
               </h3>
               <p className="text-gray-600 mb-4">
-                Como os dados de analytics podem transformar seu negócio e estratégia...
+                How analytics data can transform your business and strategy...
               </p>
               <Link
                 href="/"
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
-                Ver dashboard →
+                View dashboard →
               </Link>
             </div>
           </article>
@@ -124,18 +124,18 @@ export default function BlogPage() {
               <span className="text-4xl">🛒</span>
             </div>
             <div className="p-6">
-              <div className="text-sm text-gray-500 mb-2">E-commerce • 4 min leitura</div>
+              <div className="text-sm text-gray-500 mb-2">E-commerce • 4 min read</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Tendências de e-commerce para 2024
+                E-commerce trends for 2024
               </h3>
               <p className="text-gray-600 mb-4">
-                Descubra as principais tendências que vão revolucionar o comércio eletrônico...
+                Discover the main trends that will revolutionize online commerce...
               </p>
               <Link
-                href="/produto/2"
+                href="/product/2"
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
-                Explorar produtos →
+                Explore products →
               </Link>
             </div>
           </article>
@@ -143,24 +143,24 @@ export default function BlogPage() {
 
         {/* Analytics Info */}
         <div className="mt-12 bg-green-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-green-900 mb-4">Analytics do Blog</h3>
+          <h3 className="text-lg font-semibold text-green-900 mb-4">Blog Analytics</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 className="font-medium text-green-800 mb-2">Conteúdo Rastreado:</h4>
+              <h4 className="font-medium text-green-800 mb-2">Tracked content:</h4>
               <ul className="text-sm text-green-700 space-y-1">
-                <li>• Visualizações de página</li>
-                <li>• Tempo de leitura estimado</li>
-                <li>• Taxa de rejeição</li>
-                <li>• Fontes de tráfego para o blog</li>
+                <li>• Page views</li>
+                <li>• Estimated reading time</li>
+                <li>• Bounce rate</li>
+                <li>• Blog traffic sources</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-medium text-green-800 mb-2">Benefícios:</h4>
+              <h4 className="font-medium text-green-800 mb-2">Benefits:</h4>
               <ul className="text-sm text-green-700 space-y-1">
-                <li>• Otimização de conteúdo</li>
-                <li>• Análise de engajamento</li>
-                <li>• Estratégias de SEO</li>
-                <li>• Conversão de visitantes</li>
+                <li>• Content optimization</li>
+                <li>• Engagement analysis</li>
+                <li>• SEO strategies</li>
+                <li>• Visitor conversion</li>
               </ul>
             </div>
           </div>

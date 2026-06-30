@@ -9,8 +9,8 @@ export default function App() {
       <span className="badge">React + Vite</span>
       <h1>@insyte/track demo</h1>
       <p>
-        Aceite os cookies, abra o console e clique no botão para ver o evento de
-        analytics.
+        Accept cookies, open the console, and click the button to see the analytics
+        event.
       </p>
       <button
         type="button"
@@ -22,7 +22,7 @@ export default function App() {
           })
         }
       >
-        Disparar evento
+        Track event
       </button>
     </main>
   );

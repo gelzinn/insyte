@@ -29,7 +29,7 @@ export function AppAnalyticsProvider({ children }: { children: React.ReactNode }
       providers={[demoProvider]}
     >
       {children}
-      <ConsentBanner title="Cookies de analytics" />
+      <ConsentBanner title="Analytics cookies" />
     </AnalyticsProvider>
   );
 }

@@ -1,15 +1,15 @@
-# Apps de teste — @insyte/track
+# Test apps — @insyte/track
 
-Demos mínimas para validar a integração em cada framework.
+Minimal demos to validate integration in each framework.
 
-| App | Framework | Porta | Comando |
-|-----|-----------|-------|---------|
+| App | Framework | Port | Command |
+|-----|-----------|------|---------|
 | `test-next` | Next.js 15 | 3000 | `bun run dev:next` |
 | `test-react` | React + Vite | 5173 | `bun run dev:react` |
 | `test-vue` | Vue 3 + Vite | 5174 | `bun run dev:vue` |
 | `test-angular` | Angular 19 | 4200 | `bun run dev:angular` |
 
-## Rodar todas
+## Run all demos
 
 ```bash
 bun install
@@ -17,14 +17,14 @@ bun run build:lib
 bun run dev:apps
 ```
 
-## O que cada demo faz
+## What each demo does
 
-- Provider de console (`demo-console`) para ver eventos no DevTools
-- Banner de consentimento (GDPR)
-- Botão para disparar evento `demo_button_clicked`
-- Pageview automático após aceitar cookies
+- Console provider (`demo-console`) — events appear in DevTools
+- Consent banner (GDPR)
+- Button to fire `demo_button_clicked` event
+- Auto pageview after accepting cookies
 
-## Variáveis opcionais
+## Optional environment variables
 
 ```env
 NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXX

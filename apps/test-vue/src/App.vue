@@ -35,21 +35,21 @@ function trackDemoEvent() {
     <span class="badge">Vue 3 + Vite</span>
     <h1>@insyte/track demo</h1>
     <p>
-      Aceite os cookies, abra o console e clique no botão para ver o evento de
-      analytics.
+      Accept cookies, open the console, and click the button to see the analytics
+      event.
     </p>
     <button type="button" class="demo-button" @click="trackDemoEvent">
-      Disparar evento
+      Track event
     </button>
 
     <div v-if="showBanner" class="consent-banner" role="dialog" aria-live="polite">
       <div>
-        <strong>Cookies de analytics</strong>
-        <p>Usamos analytics para melhorar sua experiência.</p>
+        <strong>Analytics cookies</strong>
+        <p>We use analytics to improve your experience.</p>
       </div>
       <div class="consent-actions">
-        <button type="button" class="ghost" @click="rejectConsent">Recusar</button>
-        <button type="button" class="primary" @click="acceptConsent">Aceitar</button>
+        <button type="button" class="ghost" @click="rejectConsent">Decline</button>
+        <button type="button" class="primary" @click="acceptConsent">Accept</button>
       </div>
     </div>
   </main>

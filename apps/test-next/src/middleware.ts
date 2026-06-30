@@ -4,7 +4,7 @@ import { createConsentMiddleware } from "@insyte/track/next";
 export const middleware = createConsentMiddleware({
   cookieName: "insyte-consent",
   requiredCategories: ["analytics"],
-  allowPaths: ["/", "/blog", "/produto", "/api", "/_next", "/favicon.ico"],
+  allowPaths: ["/", "/blog", "/product", "/api", "/_next", "/favicon.ico"],
 });
 
 export const config = {

@@ -16,7 +16,7 @@ export function TrackDemoButton() {
       }
       className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
     >
-      Disparar evento de analytics
+      Track analytics event
     </button>
   );
 }

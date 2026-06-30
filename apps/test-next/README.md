@@ -1,97 +1,62 @@
-# Analytics Test App
+# Analytics Test App (Next.js)
 
-Este é um aplicativo Next.js 15 criado para testar e demonstrar a biblioteca de analytics em um ambiente real.
+A Next.js 15 app to test and demonstrate the analytics library in a real environment.
 
-## 🚀 Funcionalidades
+## Features
 
-- **Dashboard Completo**: Visualização em tempo real de métricas de analytics
-- **Rastreamento Automático**: Pageviews, tempo na página e fontes de tráfego
-- **Simulação de Dados**: Botão para gerar dados de teste
-- **Páginas de Demonstração**: Produto e blog para diferentes cenários
-- **Integração com Prisma**: Banco de dados SQLite local
-- **API Routes**: Endpoints para interagir com a biblioteca de analytics
+- **Full dashboard**: Real-time analytics metrics
+- **Automatic tracking**: Pageviews, time on page, traffic sources
+- **Data simulation**: Button to generate test data
+- **Demo pages**: Product and blog scenarios
+- **Prisma integration**: Local SQLite database
+- **API routes**: Endpoints to interact with the analytics library
 
-## 📁 Estrutura do Projeto
+## Project structure
 
 ```
-apps/test/
+apps/test-next/
 ├── prisma/
-│   ├── schema.prisma          # Schema do banco de dados
-│   └── dev.db                 # Banco SQLite (gerado automaticamente)
+│   ├── schema.prisma
+│   └── dev.db
 ├── src/
 │   ├── app/
-│   │   ├── api/analytics/     # API routes para analytics
-│   │   ├── blog/              # Página de blog
-│   │   ├── produto/[id]/      # Páginas dinâmicas de produto
-│   │   └── page.tsx           # Dashboard principal
-│   └── lib/                   # Utilitários (se necessário)
-├── package.json               # Dependências do projeto
-├── .env.local                 # Configurações de ambiente
-└── README.md                  # Este arquivo
+│   │   ├── api/analytics/
+│   │   ├── blog/
+│   │   ├── product/[id]/
+│   │   └── page.tsx
+│   └── middleware.ts
+└── package.json
 ```
 
-## 🛠️ Instalação e Configuração
-
-### Pré-requisitos
-- Node.js 18+
-- npm ou bun
-
-### Instalação
+## Setup
 
 ```bash
-# No diretório raiz do monorepo
-cd apps/test
-
-# Instalar dependências
-npm install
-
-# Configurar banco de dados
+cd apps/test-next
+bun install
 npx prisma generate
 npx prisma db push
 ```
 
-### Configuração do Ambiente
+## Run
 
-O arquivo `.env.local` já está configurado com:
-```env
-DATABASE_URL="file:./dev.db"
-```
-
-## 🚀 Executando o Projeto
-
-### Desenvolvimento
 ```bash
-# No diretório raiz do monorepo
-bun run dev:app
-# ou
-npm run dev
+# From monorepo root
+bun run dev:next
+
+# Or from this directory
+bun run dev
 ```
 
-### Build para Produção
-```bash
-npm run build
-npm run start
-```
+## Routes
 
-## 📊 Como Usar
-
-### 1. Dashboard Principal
-- Acesse `http://localhost:3000`
-- Visualize métricas em tempo real
-- Use o botão "Simulate Page View" para gerar dados de teste
-
-### 2. Páginas de Demonstração
+- **Dashboard**: `http://localhost:3000`
 - **Blog**: `http://localhost:3000/blog`
-- **Produtos**: `http://localhost:3000/produto/1`, `http://localhost:3000/produto/2`
+- **Products**: `http://localhost:3000/product/1`, `http://localhost:3000/product/2`
 
-### 3. API Analytics
-- `GET /api/analytics` - Dados em tempo real
-- `POST /api/analytics` - Executar ações de analytics
-
-#### Exemplos de uso da API:
+## API examples
 
 ```javascript
-// Rastrear uma pageview
+// Track a pageview
 fetch('/api/analytics', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -104,7 +69,7 @@ fetch('/api/analytics', {
   })
 })
 
-// Obter bounce rate
+// Get bounce rate
 fetch('/api/analytics', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -112,100 +77,13 @@ fetch('/api/analytics', {
 })
 ```
 
-## 🎯 Funcionalidades Demonstradas
+## Environment
 
-### Rastreamento Automático
-- **Page Views**: Toda visita é automaticamente rastreada
-- **Session Tracking**: Sessões são identificadas e gerenciadas
-- **User Agent Detection**: Informações do dispositivo e navegador
-- **Traffic Source Detection**: Origem do tráfego (orgânico, pago, social, etc.)
-
-### Métricas Disponíveis
-- **Bounce Rate**: Taxa de rejeição
-- **Page Analytics**: Visualizações, tempo médio na página
-- **Traffic Sources**: Origens de tráfego
-- **Campaign Analytics**: Análise de campanhas UTM
-- **Real-time Data**: Dados atualizados a cada 30 segundos
-
-### Simulação de Cenários
-- **Produtos**: Demonstra rastreamento de páginas de produto
-- **Blog**: Mostra análise de conteúdo
-- **UTM Parameters**: Simulação de campanhas de marketing
-- **Different Devices**: Vários user agents para teste
-
-## 🔧 Desenvolvimento
-
-### Adicionando Novas Páginas
-1. Crie um novo diretório em `src/app/`
-2. Adicione o arquivo `page.tsx`
-3. Implemente o rastreamento usando `useEffect`
-
-### Modificando a API
-- Edite `src/app/api/analytics/route.ts`
-- Adicione novas ações no switch statement
-- Teste com dados reais ou simulados
-
-### Database Schema
-Para modificar o schema do banco:
-```bash
-npx prisma studio  # Interface visual
-# ou edite prisma/schema.prisma diretamente
-npx prisma db push  # Aplicar mudanças
+```env
+DATABASE_URL="file:./dev.db"
+NEXT_PUBLIC_GA_MEASUREMENT_ID="G-XXXXXXXX"
 ```
 
-## 📈 Monitoramento
+## License
 
-O dashboard mostra dados em tempo real incluindo:
-- Usuários ativos nos últimos 5 minutos
-- Page views por minuto
-- Top páginas mais visitadas
-- Fontes de tráfego
-- Análise de campanhas
-- Métricas de engajamento
-
-## 🐛 Troubleshooting
-
-### Problemas Comuns
-
-**Erro de conexão com banco:**
-```bash
-npx prisma db push
-```
-
-**Problemas com dependências:**
-```bash
-rm -rf node_modules package-lock.json
-npm install
-```
-
-**Build falhando:**
-```bash
-npm run build 2>&1 | cat  # Ver logs completos
-```
-
-## 📚 Próximos Passos
-
-- [ ] Adicionar autenticação de usuário
-- [ ] Implementar dashboards customizáveis
-- [ ] Adicionar gráficos e visualizações avançadas
-- [ ] Integrar com ferramentas externas (Google Analytics, etc.)
-- [ ] Implementar exportação de dados
-- [ ] Adicionar testes automatizados
-
-## 🤝 Contribuição
-
-Para contribuir com melhorias:
-1. Faça fork do projeto
-2. Crie uma branch para sua feature
-3. Implemente suas mudanças
-4. Teste thoroughly
-5. Submeta um pull request
-
----
-
-**Nota**: Este é um projeto de demonstração. Para uso em produção, considere implementar:
-- Autenticação e autorização
-- Rate limiting
-- Data retention policies
-- Backup e recuperação
-- Monitoramento e alertas
+MIT
