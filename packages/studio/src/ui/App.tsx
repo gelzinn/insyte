@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { MODELS, type ModelId } from "@/lib/models";
 
 interface Status {
@@ -41,10 +42,33 @@ interface LiveOverview {
   pageViewsPerMinute: number;
 }
 
+function ContentSkeleton() {
+  return (
+    <div className="space-y-4 pt-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-xl" />
+        ))}
+      </div>
+      <Skeleton className="h-64 rounded-xl" />
+    </div>
+  );
+}
+
+function ContentSpinner() {
+  return (
+    <div className="flex min-h-[320px] items-center justify-center pt-4">
+      <RefreshCw className="size-6 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
+
 export default function App() {
   const [model, setModel] = useState<ModelId>("pageviews");
   const [filter, setFilter] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadedModel, setLoadedModel] = useState<ModelId | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
@@ -56,100 +80,101 @@ export default function App() {
   const [secondaryColumns, setSecondaryColumns] = useState<string[]>([]);
   const [secondaryTitle, setSecondaryTitle] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(
+    async (options?: { silent?: boolean }) => {
+      const silent = options?.silent ?? false;
 
-    try {
-      const nextStatus = await fetchJson<Status & { counts: Status["counts"] & { users?: number } }>(
-        "/api/status",
-      );
-      setStatus({
-        database: nextStatus.database,
-        counts: {
-          pageviews: nextStatus.counts.pageviews,
-          events: nextStatus.counts.events,
-          sessions: nextStatus.counts.sessions,
-        },
-      });
+      if (!silent && !initialLoading) {
+        setRefreshing(true);
+      }
 
-      if (model === "overview") {
-        const data = await fetchJson<Overview & { uniqueUsers?: number }>("/api/overview");
-        setOverview({
-          totalPageviews: data.totalPageviews,
-          totalEvents: data.totalEvents,
-          uniqueSessions: data.uniqueSessions,
+      setError(null);
+
+      try {
+        const nextStatus = await fetchJson<
+          Status & { counts: Status["counts"] & { users?: number } }
+        >("/api/status");
+        setStatus({
+          database: nextStatus.database,
+          counts: {
+            pageviews: nextStatus.counts.pageviews,
+            events: nextStatus.counts.events,
+            sessions: nextStatus.counts.sessions,
+          },
         });
-        setLiveOverview(null);
-        setRows([]);
-        setColumns([]);
-        setSecondaryRows([]);
-        return;
-      }
 
-      if (model === "pageviews") {
-        const data = await fetchJson<{
-          recent: Record<string, unknown>[];
-          aggregated: Record<string, unknown>[];
-        }>("/api/pageviews");
-        setOverview(null);
-        setLiveOverview(null);
-        setRows(data.recent);
-        setColumns(["path", "url", "sessionId", "referrer", "duration", "timestamp"]);
-        setSecondaryTitle("Top pages");
-        setSecondaryRows(data.aggregated);
-        setSecondaryColumns(["path", "views", "uniqueViews", "bounceRate", "exitRate"]);
-        return;
-      }
+        if (model === "overview") {
+          const data = await fetchJson<Overview & { uniqueUsers?: number }>("/api/overview");
+          setOverview({
+            totalPageviews: data.totalPageviews,
+            totalEvents: data.totalEvents,
+            uniqueSessions: data.uniqueSessions,
+          });
+          setLiveOverview(null);
+          setRows([]);
+          setColumns([]);
+          setSecondaryRows([]);
+        } else if (model === "pageviews") {
+          const data = await fetchJson<{
+            recent: Record<string, unknown>[];
+            aggregated: Record<string, unknown>[];
+          }>("/api/pageviews");
+          setOverview(null);
+          setLiveOverview(null);
+          setRows(data.recent);
+          setColumns(["path", "url", "sessionId", "referrer", "duration", "timestamp"]);
+          setSecondaryTitle("Top pages");
+          setSecondaryRows(data.aggregated);
+          setSecondaryColumns(["path", "views", "uniqueViews", "bounceRate", "exitRate"]);
+        } else if (model === "events") {
+          const data = await fetchJson<{ events: Record<string, unknown>[] }>("/api/events");
+          setOverview(null);
+          setLiveOverview(null);
+          setRows(data.events);
+          setColumns(["eventType", "sessionId", "url", "timestamp"]);
+          setSecondaryRows([]);
+        } else if (model === "traffic") {
+          const data = await fetchJson<{
+            sources: Record<string, unknown>[];
+            campaigns: Record<string, unknown>[];
+          }>("/api/traffic");
+          setOverview(null);
+          setLiveOverview(null);
+          setRows(data.sources);
+          setColumns(["source", "count", "percentage"]);
+          setSecondaryTitle("Campaigns");
+          setSecondaryRows(data.campaigns);
+          setSecondaryColumns(["campaignName", "source", "medium", "sessions"]);
+        } else if (model === "live") {
+          const data = await fetchJson<{
+            activeUsers: number;
+            pageViewsPerMinute: number;
+            topPages: Record<string, unknown>[];
+          }>("/api/live");
+          setOverview(null);
+          setLiveOverview({ pageViewsPerMinute: data.pageViewsPerMinute });
+          setRows(data.topPages);
+          setColumns(["url", "views"]);
+          setSecondaryRows([]);
+        }
 
-      if (model === "events") {
-        const data = await fetchJson<{ events: Record<string, unknown>[] }>("/api/events");
-        setOverview(null);
-        setLiveOverview(null);
-        setRows(data.events);
-        setColumns(["eventType", "sessionId", "url", "timestamp"]);
-        setSecondaryRows([]);
-        return;
+        setLoadedModel(model);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load data");
+      } finally {
+        setInitialLoading(false);
+        if (!silent) {
+          setRefreshing(false);
+        }
       }
-
-      if (model === "traffic") {
-        const data = await fetchJson<{
-          sources: Record<string, unknown>[];
-          campaigns: Record<string, unknown>[];
-        }>("/api/traffic");
-        setOverview(null);
-        setLiveOverview(null);
-        setRows(data.sources);
-        setColumns(["source", "count", "percentage"]);
-        setSecondaryTitle("Campaigns");
-        setSecondaryRows(data.campaigns);
-        setSecondaryColumns(["campaignName", "source", "medium", "sessions"]);
-        return;
-      }
-
-      if (model === "live") {
-        const data = await fetchJson<{
-          activeUsers: number;
-          pageViewsPerMinute: number;
-          topPages: Record<string, unknown>[];
-        }>("/api/live");
-        setOverview(null);
-        setLiveOverview({ pageViewsPerMinute: data.pageViewsPerMinute });
-        setRows(data.topPages);
-        setColumns(["url", "views"]);
-        setSecondaryRows([]);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  }, [model]);
+    },
+    [initialLoading, loadedModel, model],
+  );
 
   useEffect(() => {
     setSelected(null);
     void load();
-    const interval = model === "live" ? setInterval(load, 5000) : undefined;
+    const interval = model === "live" ? setInterval(() => void load({ silent: true }), 5000) : undefined;
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -170,6 +195,76 @@ export default function App() {
   };
 
   const currentModel = MODELS.find((m) => m.id === model)!;
+  const isNavigating = loadedModel !== null && loadedModel !== model;
+  const isBackgroundRefresh = refreshing && loadedModel === model;
+  const showInitialSkeleton = initialLoading;
+  const showNavigationSpinner = !initialLoading && isNavigating;
+  const showContent = loadedModel === model && !initialLoading;
+
+  function renderContent() {
+    if (loadedModel === "overview" && overview) {
+      return (
+        <div className="space-y-6 pt-4">
+          <MetricCards
+            items={[
+              { label: "Page views", value: overview.totalPageviews },
+              { label: "Events", value: overview.totalEvents },
+              { label: "Sessions", value: overview.uniqueSessions },
+            ]}
+          />
+          {overview.totalPageviews === 0 && overview.totalEvents === 0 ? <EmptyOverview /> : null}
+        </div>
+      );
+    }
+
+    if (loadedModel === "live" && liveOverview) {
+      return (
+        <div className="space-y-6 pt-4">
+          <MetricCards
+            items={[{ label: "Page views / min", value: liveOverview.pageViewsPerMinute }]}
+          />
+          <DataTable
+            title={`${filteredRows.length} records`}
+            description="Top pages in the last hour"
+            rows={filteredRows}
+            columns={columns}
+            selected={selected}
+            onSelect={setSelected}
+          />
+        </div>
+      );
+    }
+
+    if (loadedModel && loadedModel !== "overview" && loadedModel !== "live") {
+      return (
+        <div
+          className={
+            secondaryRows.length ? "grid gap-6 pt-4 xl:grid-cols-2" : "space-y-6 pt-4"
+          }
+        >
+          <DataTable
+            title={`${filteredRows.length} records`}
+            rows={filteredRows}
+            columns={columns}
+            selected={selected}
+            onSelect={setSelected}
+            emptyLabel={MODELS.find((m) => m.id === loadedModel)?.label}
+          />
+          {secondaryRows.length ? (
+            <DataTable
+              title={secondaryTitle}
+              rows={secondaryRows}
+              columns={secondaryColumns}
+              selected={null}
+              onSelect={() => undefined}
+            />
+          ) : null}
+        </div>
+      );
+    }
+
+    return null;
+  }
 
   return (
     <SidebarProvider>
@@ -202,8 +297,13 @@ export default function App() {
             </Breadcrumb>
           </div>
           <div className="px-4">
-            <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-              <RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void load()}
+              disabled={refreshing || isNavigating}
+            >
+              <RefreshCw className={refreshing ? "size-4 animate-spin" : "size-4"} />
               Refresh
             </Button>
           </div>
@@ -216,74 +316,17 @@ export default function App() {
         ) : null}
 
         <div className="flex min-h-0 flex-1">
-          <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-auto p-4 pt-0">
-            {loading ? (
-              <div className="space-y-4 pt-4">
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-28 rounded-xl" />
-                  ))}
-                </div>
-                <Skeleton className="h-64 rounded-xl" />
-              </div>
-            ) : null}
-
-            {!loading && model === "overview" && overview ? (
-              <div className="space-y-6 pt-4">
-                <MetricCards
-                  items={[
-                    { label: "Page views", value: overview.totalPageviews },
-                    { label: "Events", value: overview.totalEvents },
-                    { label: "Sessions", value: overview.uniqueSessions },
-                  ]}
-                />
-                {overview.totalPageviews === 0 && overview.totalEvents === 0 ? (
-                  <EmptyOverview />
-                ) : null}
-              </div>
-            ) : null}
-
-            {!loading && model === "live" && liveOverview ? (
-              <div className="space-y-6 pt-4">
-                <MetricCards
-                  items={[{ label: "Page views / min", value: liveOverview.pageViewsPerMinute }]}
-                />
-                <DataTable
-                  title={`${filteredRows.length} records`}
-                  description="Top pages in the last hour"
-                  rows={filteredRows}
-                  columns={columns}
-                  selected={selected}
-                  onSelect={setSelected}
-                />
-              </div>
-            ) : null}
-
-            {!loading && model !== "overview" && model !== "live" ? (
+          <div className="relative min-w-0 flex-1 overflow-auto p-4 pt-0">
+            {showInitialSkeleton ? <ContentSkeleton /> : null}
+            {showNavigationSpinner ? <ContentSpinner /> : null}
+            {showContent ? (
               <div
-                className={
-                  secondaryRows.length
-                    ? "grid gap-6 pt-4 xl:grid-cols-2"
-                    : "space-y-6 pt-4"
-                }
+                className={cn(
+                  "transition-opacity duration-200",
+                  isBackgroundRefresh && "pointer-events-none opacity-60",
+                )}
               >
-                <DataTable
-                  title={`${filteredRows.length} records`}
-                  rows={filteredRows}
-                  columns={columns}
-                  selected={selected}
-                  onSelect={setSelected}
-                  emptyLabel={currentModel.label}
-                />
-                {secondaryRows.length ? (
-                  <DataTable
-                    title={secondaryTitle}
-                    rows={secondaryRows}
-                    columns={secondaryColumns}
-                    selected={null}
-                    onSelect={() => undefined}
-                  />
-                ) : null}
+                {renderContent()}
               </div>
             ) : null}
           </div>

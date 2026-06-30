@@ -36,7 +36,6 @@ export function AppSidebar({
       <SidebarHeader>
         <div className="px-2">
           <div className="font-semibold">Insyte Studio</div>
-          <div className="text-xs text-muted-foreground">Local analytics database</div>
         </div>
         <SidebarInput
           type="search"
