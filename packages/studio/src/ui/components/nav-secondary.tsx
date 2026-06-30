@@ -42,23 +42,19 @@ export function NavSecondary({
       <SidebarGroupContent>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="h-auto py-2" tooltip={database}>
-              <Database />
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">Database</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {databaseName(database)}
-                </span>
-              </div>
+            <SidebarMenuButton className="gap-2" tooltip={database}>
+              <Database className="shrink-0" />
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">Database</span>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {databaseName(database)}
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="h-auto py-2" onClick={cycleTheme}>
-              <ThemeIcon />
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">Theme</span>
-                <span className="truncate text-xs text-muted-foreground">{themeMode}</span>
-              </div>
+            <SidebarMenuButton className="gap-2" onClick={cycleTheme}>
+              <ThemeIcon className="shrink-0" />
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">Theme</span>
+              <span className="shrink-0 text-xs text-muted-foreground">{themeMode}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

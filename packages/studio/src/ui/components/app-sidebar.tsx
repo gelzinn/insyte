@@ -3,9 +3,6 @@ import {
   SidebarContent,
   SidebarHeader,
   SidebarInput,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { NavModels } from "@/components/nav-models";
 import { NavSecondary } from "@/components/nav-secondary";
@@ -37,21 +34,10 @@ export function AppSidebar({
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="pointer-events-none">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
-                in
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">Insyte Studio</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  Local analytics database
-                </span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="px-2">
+          <div className="font-semibold">Insyte Studio</div>
+          <div className="text-xs text-muted-foreground">Local analytics database</div>
+        </div>
         <SidebarInput
           type="search"
           placeholder="Search records..."
