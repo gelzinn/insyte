@@ -232,7 +232,7 @@ export default function App() {
               <div className="space-y-6 pt-4">
                 <MetricCards
                   items={[
-                    { label: "Pageviews", value: overview.totalPageviews },
+                    { label: "Page views", value: overview.totalPageviews },
                     { label: "Events", value: overview.totalEvents },
                     { label: "Sessions", value: overview.uniqueSessions },
                   ]}
@@ -246,7 +246,7 @@ export default function App() {
             {!loading && model === "live" && liveOverview ? (
               <div className="space-y-6 pt-4">
                 <MetricCards
-                  items={[{ label: "Pageviews / min", value: liveOverview.pageViewsPerMinute }]}
+                  items={[{ label: "Page views / min", value: liveOverview.pageViewsPerMinute }]}
                 />
                 <DataTable
                   title={`${filteredRows.length} records`}
