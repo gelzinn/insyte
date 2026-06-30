@@ -1,6 +1,7 @@
 import { ArrowUpIcon, Bot, Check, MessageCircleDashedIcon, MoreVertical } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { ChatMessageItem } from "@/components/chat-message-item";
+import { ChatMessageThinkingItem } from "@/components/chat-message-thinking-item";
 import { AssistantSettingsDialog } from "@/components/assistant-settings-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +25,6 @@ import {
   InputGroupButton,
   InputGroupTextarea,
 } from "@/components/ui/input-group";
-import { Marker, MarkerContent } from "@/components/ui/marker";
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -260,13 +260,9 @@ export function AssistantChat({ context }: AssistantChatProps) {
                   ))}
                   {sending ? (
                     <MessageScrollerItem>
-                      <Marker>
-                        <MarkerContent>
-                          <span className="shimmer text-sm text-muted-foreground">
-                            Thinking…
-                          </span>
-                        </MarkerContent>
-                      </Marker>
+                      <ChatMessageThinkingItem
+                        meta={createMessageMeta(config.providerId, config.model)}
+                      />
                     </MessageScrollerItem>
                   ) : null}
                 </MessageScrollerContent>
