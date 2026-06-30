@@ -1,6 +1,7 @@
-import { RefreshCw, Search } from "lucide-react";
+import { Bot, PanelRight, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson } from "./api";
+import { AiChatPanel } from "@/components/ai-chat-panel";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
   DataTable,
@@ -9,6 +10,7 @@ import {
 } from "@/components/data-table";
 import { LiveIndicator } from "@/components/live-indicator";
 import { MetricCards } from "@/components/metric-cards";
+import { SearchInput } from "@/components/search-input";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -17,10 +19,11 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
+import { buildStudioContext } from "@/lib/studio-context";
 import { cn } from "@/lib/utils";
 import { MODELS, type ModelId } from "@/lib/models";
 
@@ -64,7 +67,58 @@ function ContentSpinner() {
   );
 }
 
-export default function App() {
+function StudioHeaderToolbar({
+  showSearch,
+  filter,
+  onFilterChange,
+  refreshing,
+  isNavigating,
+  onRefresh,
+  aiOpen,
+  onToggleAi,
+}: {
+  showSearch: boolean;
+  filter: string;
+  onFilterChange: (value: string) => void;
+  refreshing: boolean;
+  isNavigating: boolean;
+  onRefresh: () => void;
+  aiOpen: boolean;
+  onToggleAi: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 px-4">
+      {showSearch ? (
+        <SearchInput
+          value={filter}
+          onChange={onFilterChange}
+          className="w-40 sm:w-56"
+        />
+      ) : null}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onRefresh}
+        disabled={refreshing || isNavigating}
+      >
+        <RefreshCw className={refreshing ? "size-4 animate-spin" : "size-4"} />
+        Refresh
+      </Button>
+      <Button
+        variant={aiOpen ? "secondary" : "outline"}
+        size="sm"
+        onClick={onToggleAi}
+        title="Toggle assistant (])"
+      >
+        <PanelRight className="size-4" />
+        <Bot className="size-4" />
+        <span className="hidden sm:inline">Assistant</span>
+      </Button>
+    </div>
+  );
+}
+
+function StudioShell() {
   const [model, setModel] = useState<ModelId>("pageviews");
   const [filter, setFilter] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
@@ -80,6 +134,9 @@ export default function App() {
   const [secondaryRows, setSecondaryRows] = useState<Record<string, unknown>[]>([]);
   const [secondaryColumns, setSecondaryColumns] = useState<string[]>([]);
   const [secondaryTitle, setSecondaryTitle] = useState("");
+  const [aiOpen, setAiOpen] = useState(false);
+
+  useKeyboardShortcut("]", () => setAiOpen((open) => !open));
 
   const load = useCallback(
     async (options?: { silent?: boolean }) => {
@@ -272,8 +329,38 @@ export default function App() {
 
   const showSearch = model !== "overview";
 
+  const studioContext = useMemo(
+    () =>
+      buildStudioContext({
+        model,
+        modelLabel: currentModel.label,
+        filter,
+        overview,
+        liveOverview,
+        counts: status?.counts,
+        columns,
+        rows: filteredRows,
+        secondaryTitle,
+        secondaryRows,
+        selectedRecord: selected,
+      }),
+    [
+      model,
+      currentModel.label,
+      filter,
+      overview,
+      liveOverview,
+      status?.counts,
+      columns,
+      filteredRows,
+      secondaryTitle,
+      secondaryRows,
+      selected,
+    ],
+  );
+
   return (
-    <SidebarProvider>
+    <>
       <AppSidebar
         model={model}
         onModelChange={setModel}
@@ -283,7 +370,7 @@ export default function App() {
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b">
           <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
+            <SidebarTrigger className="-ml-1" title="Toggle sidebar ([)" />
             <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
             <Breadcrumb>
               <BreadcrumbList>
@@ -300,30 +387,16 @@ export default function App() {
               </BreadcrumbList>
             </Breadcrumb>
           </div>
-          <div className="flex items-center gap-2 px-4">
-            {showSearch ? (
-              <div className="relative min-w-0">
-                <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search records..."
-                  value={filter}
-                  onChange={(event) => setFilter(event.target.value)}
-                  className="h-8 w-36 pl-8 sm:w-52"
-                  aria-label="Search records"
-                />
-              </div>
-            ) : null}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void load()}
-              disabled={refreshing || isNavigating}
-            >
-              <RefreshCw className={refreshing ? "size-4 animate-spin" : "size-4"} />
-              Refresh
-            </Button>
-          </div>
+          <StudioHeaderToolbar
+            showSearch={showSearch}
+            filter={filter}
+            onFilterChange={setFilter}
+            refreshing={refreshing}
+            isNavigating={isNavigating}
+            onRefresh={() => void load()}
+            aiOpen={aiOpen}
+            onToggleAi={() => setAiOpen((open) => !open)}
+          />
         </header>
 
         {error ? (
@@ -351,8 +424,22 @@ export default function App() {
           {selected ? (
             <RecordDetailPanel record={selected} onClose={() => setSelected(null)} />
           ) : null}
+
+          <AiChatPanel
+            open={aiOpen}
+            onClose={() => setAiOpen(false)}
+            context={studioContext}
+          />
         </div>
       </SidebarInset>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <SidebarProvider>
+      <StudioShell />
     </SidebarProvider>
   );
 }
