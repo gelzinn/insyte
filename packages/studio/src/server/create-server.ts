@@ -16,10 +16,11 @@ export interface StudioServerOptions {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-function getUiRoot(): string {
+function getUiRoot(): string | null {
   const candidates = [
-    join(__dirname, "ui"),
     join(__dirname, "../ui"),
+    join(__dirname, "../../dist/ui"),
+    join(process.cwd(), "dist/ui"),
     join(process.cwd(), "packages/studio/dist/ui"),
   ];
 
@@ -29,7 +30,7 @@ function getUiRoot(): string {
     }
   }
 
-  return join(__dirname, "ui");
+  return null;
 }
 
 export async function createStudioApp(options: StudioServerOptions = {}) {
@@ -142,18 +143,21 @@ export async function createStudioApp(options: StudioServerOptions = {}) {
 
   const uiRoot = getUiRoot();
 
-  app.use("/assets/*", serveStatic({ root: uiRoot }));
+  if (uiRoot) {
+    app.use("/assets/*", serveStatic({ root: uiRoot }));
+  }
+
   app.get("*", async (c) => {
     const path = c.req.path;
     if (path.startsWith("/api") || path.startsWith("/ingest")) {
       return c.notFound();
     }
 
-    const filePath = join(uiRoot, "index.html");
-    if (!existsSync(filePath)) {
+    if (!uiRoot) {
       return c.text("Insyte Studio UI not built. Run: bun run build --filter=@insyte/studio", 503);
     }
 
+    const filePath = join(uiRoot, "index.html");
     const html = readFileSync(filePath, "utf-8");
     return c.html(html);
   });

@@ -21,7 +21,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "vite build && tsup",
+    "build": "tsup && vite build",
     "build:ui": "vite build",
     "predev": "( test -f ../analytics/dist/index.mjs || bun run --cwd ../analytics build ) && ( test -f dist/ui/index.html || bun run build:ui )",
     "dev": "tsx src/cli.ts --port 5555 --database ../../.insyte/analytics.db --no-open",

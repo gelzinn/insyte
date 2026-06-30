@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const studioUrl =
+  process.env.INSYTE_STUDIO_URL ??
+  process.env.NEXT_PUBLIC_INSYTE_STUDIO_URL ??
+  "http://127.0.0.1:5555";
 
 const mockData = {
   bounceRate: {
@@ -63,63 +65,95 @@ const mockData = {
   },
 };
 
+async function fetchStudioJson<T>(path: string, init?: RequestInit): Promise<T | null> {
+  try {
+    const response = await fetch(`${studioUrl}${path}`, {
+      ...init,
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    const { action, ...payload } = data;
+    const { action } = data;
 
     switch (action) {
       case "trackPageView":
-        console.log("Page view tracked:", payload);
-        return NextResponse.json({
-          success: true,
-          message: "Page view tracked (mock)",
-          data: payload,
+      case "trackPageExit": {
+        const tracked = await fetchStudioJson("/api/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
         });
 
-      case "trackPageExit":
-        console.log("Page exit tracked:", payload);
+        if (tracked) {
+          return NextResponse.json(tracked);
+        }
+
+        console.log(`Analytics action (${action}):`, data);
         return NextResponse.json({
           success: true,
-          message: "Page exit tracked (mock)",
-          data: payload,
+          message: `${action} tracked (mock fallback)`,
+          data,
         });
+      }
 
-      case "getBounceRate":
-        return NextResponse.json(mockData.bounceRate);
+      case "getBounceRate": {
+        const bounceRate = await fetchStudioJson<typeof mockData.bounceRate>("/api/bounce-rate");
+        return NextResponse.json(bounceRate ?? mockData.bounceRate);
+      }
 
-      case "getPageAnalytics":
-        return NextResponse.json(mockData.pageAnalytics);
+      case "getPageAnalytics": {
+        const pageviews = await fetchStudioJson<{ aggregated: typeof mockData.pageAnalytics }>(
+          "/api/pageviews",
+        );
+        return NextResponse.json(pageviews?.aggregated ?? mockData.pageAnalytics);
+      }
 
-      case "getTrafficSources":
-        return NextResponse.json(mockData.trafficSources);
+      case "getTrafficSources": {
+        const traffic = await fetchStudioJson<{ sources: typeof mockData.trafficSources }>(
+          "/api/traffic",
+        );
+        return NextResponse.json(traffic?.sources ?? mockData.trafficSources);
+      }
 
-      case "getCampaignAnalytics":
-        return NextResponse.json(mockData.campaigns);
+      case "getCampaignAnalytics": {
+        const traffic = await fetchStudioJson<{ campaigns: typeof mockData.campaigns }>(
+          "/api/traffic",
+        );
+        return NextResponse.json(traffic?.campaigns ?? mockData.campaigns);
+      }
 
-      case "getRealTimeAnalytics":
-        return NextResponse.json(mockData.realTime);
+      case "getRealTimeAnalytics": {
+        const live = await fetchStudioJson<typeof mockData.realTime>("/api/live");
+        return NextResponse.json(live ?? mockData.realTime);
+      }
 
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     }
   } catch (error) {
     console.error("Analytics API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function GET() {
   try {
-    return NextResponse.json(mockData.realTime);
+    const live = await fetchStudioJson<typeof mockData.realTime>("/api/live");
+    return NextResponse.json(live ?? mockData.realTime);
   } catch (error) {
     console.error("Analytics GET error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

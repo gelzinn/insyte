@@ -283,10 +283,13 @@ export class WebAnalyticsEngine {
 
     const query = `
       UPDATE ${this.tableNames.pageviews}
-      SET duration = ?, is_exit = true, updated_at = ?
-      WHERE session_id = ? AND url = ?
-      ORDER BY timestamp DESC
-      LIMIT 1
+      SET duration = ?, is_exit = 1, updated_at = ?
+      WHERE id = (
+        SELECT id FROM ${this.tableNames.pageviews}
+        WHERE session_id = ? AND url = ?
+        ORDER BY timestamp DESC
+        LIMIT 1
+      )
     `;
 
     await this.connector.query(query, [duration, new Date(), sessionId, url]);
