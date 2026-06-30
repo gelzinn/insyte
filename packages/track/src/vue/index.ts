@@ -1,5 +1,6 @@
 import type { App } from "vue";
 import { AnalyticsClient, createAnalytics } from "../core/analytics-client";
+import { resolveInsyteConfig, type InsyteOptions } from "../config/resolve-config";
 import type {
   AnalyticsProperties,
   CreateAnalyticsOptions,
@@ -13,6 +14,15 @@ export const ANALYTICS_INJECTION_KEY = Symbol("insyte-analytics");
 export interface InsyteAnalyticsPluginOptions extends CreateAnalyticsOptions {
   autoInit?: boolean;
   autoPageView?: boolean;
+}
+
+export function createInsytePlugin(options?: InsyteOptions & { autoPageView?: boolean }) {
+  const config = resolveInsyteConfig({ ...options, autoPageView: options?.autoPageView ?? true });
+  return createInsyteAnalyticsPlugin({
+    ...config,
+    autoInit: true,
+    autoPageView: options?.autoPageView ?? true,
+  });
 }
 
 export function createInsyteAnalyticsPlugin(options: InsyteAnalyticsPluginOptions) {
@@ -49,6 +59,7 @@ declare module "vue" {
 }
 
 export { AnalyticsClient, createAnalytics };
+export type { InsyteOptions } from "../config/resolve-config";
 export type {
   AnalyticsProperties,
   CreateAnalyticsOptions,

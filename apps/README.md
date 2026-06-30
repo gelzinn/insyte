@@ -9,45 +9,41 @@ Minimal demos to validate integration in each framework.
 | `test-vue` | Vue 3 + Vite | 5174 | `bun run dev:vue` |
 | `test-angular` | Angular 19 | 4200 | `bun run dev:angular` |
 
-## Run all demos
+## Quick start
 
 ```bash
 bun install
-bun run build:lib   # required on first clone — builds insyte, track, and studio
+bun run build:lib
+
+# Terminal 1 — Insyte Studio (like prisma studio)
+bun run studio
+
+# Terminal 2 — demo apps
 bun run dev:apps
 ```
 
-For studio + apps together:
+## SDK setup in demos
 
-```bash
-bun run build:lib
-bun run dev         # or: bun run studio & bun run dev:apps
+Each demo uses the simplified Insyte API:
+
+```tsx
+import { InsyteProvider } from "@insyte/track/react";
+
+<InsyteProvider autoPageView>{children}</InsyteProvider>
 ```
 
-## What each demo does
+In development, events flow to Studio automatically (`INSYTE_DEV=true` by default).
 
-- Console provider (`demo-console`) — events appear in DevTools
-- **Insyte Studio collector** — events sent to local studio in dev (`http://127.0.0.1:5555`)
-- Consent banner (GDPR)
-- Button to fire `demo_button_clicked` event
-- Auto pageview after accepting cookies
-
-## Local analytics studio
-
-```bash
-# Terminal 1
-bun run studio
-
-# Terminal 2
-bun run dev:react   # or dev:next, dev:vue, dev:angular
-```
-
-Open http://127.0.0.1:5555, accept cookies in the demo app, and browse unified analytics.
-
-## Optional environment variables
+## Environment variables
 
 ```env
-NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXX
-VITE_INSYTE_STUDIO_URL=http://127.0.0.1:5555
-NEXT_PUBLIC_INSYTE_STUDIO_URL=http://127.0.0.1:5555
+INSYTE_DEV=true
+INSYTE_STUDIO_URL=http://127.0.0.1:5555
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXX   # optional
+```
+
+## Scaffold your own project
+
+```bash
+npx insyte init --framework next
 ```

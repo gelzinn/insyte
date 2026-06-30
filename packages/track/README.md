@@ -1,18 +1,102 @@
 # @insyte/track
 
-Unified analytics integration for JavaScript projects — works with **React**, **Vue**, **Angular**, **Vite**, **Next.js**, and vanilla JS.
+Unified analytics for JavaScript — **as easy to set up as Resend**.
 
-## Installation
+Works with React, Vue, Angular, Next.js, and Vite. Browse events locally with [Insyte Studio](https://github.com/gelzinn/insyte) (`npx insyte studio`).
+
+## Quick start (3 minutes)
 
 ```bash
-npm install @insyte/track
-# or
 bun add @insyte/track
+bun add -d @insyte/cli
 ```
 
-## Quick start
+```typescript
+import { Insyte } from "@insyte/track";
 
-### Vanilla / Vite
+export const analytics = new Insyte();
+await analytics.init();
+
+analytics.track("signup_clicked", { plan: "pro" });
+```
+
+```bash
+# Browse events locally (like prisma studio)
+npx insyte studio
+```
+
+Set in `.env`:
+
+```env
+INSYTE_DEV=true
+```
+
+In development, events are sent to `http://127.0.0.1:5555` automatically. No GA/Mixpanel keys required.
+
+## React / Next.js
+
+```tsx
+import { InsyteProvider } from "@insyte/track/react";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <InsyteProvider autoPageView>{children}</InsyteProvider>;
+}
+```
+
+## Vue
+
+```typescript
+import { createInsytePlugin } from "@insyte/track/vue";
+
+app.use(createInsytePlugin({ autoPageView: true }));
+```
+
+## Angular
+
+```typescript
+import { provideInsyte } from "@insyte/track/angular";
+
+export const appConfig = {
+  providers: [...provideInsyte({ autoPageView: true })],
+};
+```
+
+## Scaffold a project
+
+```bash
+npx insyte init --framework next
+```
+
+## Production providers
+
+Add GA4, Mixpanel, etc. alongside the local collector:
+
+```typescript
+import { Insyte, googleAnalytics } from "@insyte/track";
+
+const analytics = new Insyte({
+  providers: [googleAnalytics({ measurementId: "G-XXXXXXXX" })],
+  consent: { storageKey: "insyte-consent" },
+});
+```
+
+## Insyte Studio
+
+```bash
+npx insyte studio
+```
+
+Opens a Prisma Studio-style UI at http://127.0.0.1:5555 to browse pageviews, events, and traffic from `.insyte/analytics.db`.
+
+## Environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `INSYTE_DEV=true` | Enable local collector (default in development) |
+| `INSYTE_STUDIO_URL` | Studio ingest URL (default: `http://127.0.0.1:5555`) |
+| `INSYTE_KEY` | Production API key (future hosted ingest) |
+
+## Vanilla / Vite (advanced)
 
 ```typescript
 import { setupAnalytics, googleAnalytics, mixpanel } from "@insyte/track";

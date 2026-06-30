@@ -1,4 +1,5 @@
 import { readFileSync, existsSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
@@ -24,6 +25,14 @@ function getUiRoot(): string | null {
     join(process.cwd(), "packages/studio/dist/ui"),
   ];
 
+  try {
+    const require = createRequire(import.meta.url);
+    const studioPackageJson = require.resolve("@insyte/studio/package.json");
+    candidates.unshift(join(dirname(studioPackageJson), "dist/ui"));
+  } catch {
+    // @insyte/studio not resolvable from this context
+  }
+
   for (const candidate of candidates) {
     if (existsSync(join(candidate, "index.html"))) {
       return candidate;
@@ -46,6 +55,21 @@ export async function createStudioApp(options: StudioServerOptions = {}) {
       database: getDatabasePath(),
     }),
   );
+
+  app.get("/api/status", async (c) => {
+    const engine = getStudioEngine();
+    const overview = await engine.getOverview();
+    return c.json({
+      status: "ok",
+      database: getDatabasePath(),
+      counts: {
+        pageviews: overview.totalPageviews,
+        events: overview.totalEvents,
+        sessions: overview.uniqueSessions,
+        users: overview.uniqueUsers,
+      },
+    });
+  });
 
   app.get("/api/overview", async (c) => {
     const engine = getStudioEngine();

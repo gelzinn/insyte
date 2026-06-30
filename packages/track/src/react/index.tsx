@@ -10,9 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import { AnalyticsClient, createAnalytics } from "../core/analytics-client";
-import type { ConsentCategory, ConsentState } from "../types";
+import { resolveInsyteConfig, type InsyteOptions } from "../config/resolve-config";
 import type {
   AnalyticsProperties,
+  ConsentCategory,
+  ConsentState,
   CreateAnalyticsOptions,
   PageProperties,
   TrackOptions,
@@ -25,6 +27,34 @@ export interface AnalyticsProviderProps extends CreateAnalyticsOptions {
   children: ReactNode;
   autoInit?: boolean;
   autoPageView?: boolean;
+}
+
+export interface InsyteProviderProps extends InsyteOptions {
+  children: ReactNode;
+  autoInit?: boolean;
+  autoPageView?: boolean;
+}
+
+export function InsyteProvider({
+  children,
+  autoInit = true,
+  autoPageView = true,
+  ...insyteOptions
+}: InsyteProviderProps) {
+  const config = resolveInsyteConfig({ ...insyteOptions, autoPageView });
+  const showConsent = config.waitForConsent;
+
+  return (
+    <AnalyticsProvider
+      {...config}
+      autoInit={autoInit}
+      autoPageView={autoPageView}
+      waitForConsent={config.waitForConsent}
+    >
+      {children}
+      {showConsent ? <ConsentBanner /> : null}
+    </AnalyticsProvider>
+  );
 }
 
 export function AnalyticsProvider({
@@ -237,6 +267,7 @@ export function ConsentBanner({
 }
 
 export { AnalyticsClient, createAnalytics };
+export type { InsyteOptions } from "../config/resolve-config";
 export type {
   AnalyticsProperties,
   AnalyticsProvider as AnalyticsProviderInterface,
