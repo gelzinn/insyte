@@ -36,7 +36,9 @@ export function NavModels({ items, activeId, onSelect }: NavModelsProps) {
               <span className="truncate">{item.label}</span>
             </SidebarMenuButton>
             {item.count !== undefined ? (
-              <SidebarMenuBadge>{item.count.toLocaleString()}</SidebarMenuBadge>
+              <SidebarMenuBadge className="font-normal text-muted-foreground opacity-70 peer-hover/menu-button:text-muted-foreground peer-data-[active=true]/menu-button:text-muted-foreground">
+                {item.count.toLocaleString()}
+              </SidebarMenuBadge>
             ) : null}
           </SidebarMenuItem>
         ))}

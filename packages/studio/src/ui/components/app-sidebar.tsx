@@ -1,9 +1,4 @@
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInput,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import { NavModels } from "@/components/nav-models";
 import { NavSecondary } from "@/components/nav-secondary";
 import { MODELS, type ModelId } from "@/lib/models";
@@ -11,8 +6,6 @@ import { MODELS, type ModelId } from "@/lib/models";
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   model: ModelId;
   onModelChange: (model: ModelId) => void;
-  filter: string;
-  onFilterChange: (value: string) => void;
   counts: Record<ModelId, number>;
   database?: string;
 }
@@ -20,8 +13,6 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 export function AppSidebar({
   model,
   onModelChange,
-  filter,
-  onFilterChange,
   counts,
   database,
   ...props
@@ -34,15 +25,9 @@ export function AppSidebar({
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
-        <div className="px-2">
+        <div className="px-2 py-1">
           <div className="font-semibold">Insyte Studio</div>
         </div>
-        <SidebarInput
-          type="search"
-          placeholder="Search records..."
-          value={filter}
-          onChange={(event) => onFilterChange(event.target.value)}
-        />
       </SidebarHeader>
       <SidebarContent>
         <NavModels items={navItems} activeId={model} onSelect={onModelChange} />

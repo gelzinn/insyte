@@ -1,4 +1,4 @@
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson } from "./api";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -17,6 +17,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -173,6 +174,9 @@ export default function App() {
 
   useEffect(() => {
     setSelected(null);
+    if (model === "overview") {
+      setFilter("");
+    }
     void load();
     const interval = model === "live" ? setInterval(() => void load({ silent: true }), 5000) : undefined;
     return () => {
@@ -266,13 +270,13 @@ export default function App() {
     return null;
   }
 
+  const showSearch = model !== "overview";
+
   return (
     <SidebarProvider>
       <AppSidebar
         model={model}
         onModelChange={setModel}
-        filter={filter}
-        onFilterChange={setFilter}
         counts={modelCounts}
         database={status?.database}
       />
@@ -296,7 +300,20 @@ export default function App() {
               </BreadcrumbList>
             </Breadcrumb>
           </div>
-          <div className="px-4">
+          <div className="flex items-center gap-2 px-4">
+            {showSearch ? (
+              <div className="relative min-w-0">
+                <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search records..."
+                  value={filter}
+                  onChange={(event) => setFilter(event.target.value)}
+                  className="h-8 w-36 pl-8 sm:w-52"
+                  aria-label="Search records"
+                />
+              </div>
+            ) : null}
             <Button
               variant="outline"
               size="sm"
