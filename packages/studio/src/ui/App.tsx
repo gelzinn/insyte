@@ -21,7 +21,6 @@ import {
 } from "@/components/data-table";
 import { LiveIndicator } from "@/components/live-indicator";
 import { MetricCards } from "@/components/metric-cards";
-import { SearchInput } from "@/components/search-input";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -86,7 +85,6 @@ function StudioShell({
   onLeftSidebarWidthChange: (width: number) => void;
 }) {
   const [model, setModel] = useState<ModelId>("pageviews");
-  const [filter, setFilter] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadedModel, setLoadedModel] = useState<ModelId | null>(null);
@@ -194,21 +192,12 @@ function StudioShell({
 
   useEffect(() => {
     setSelected(null);
-    if (model === "overview") {
-      setFilter("");
-    }
     void load();
     const interval = model === "live" ? setInterval(() => void load({ silent: true }), 5000) : undefined;
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [load, model]);
-
-  const filteredRows = useMemo(() => {
-    if (!filter.trim()) return rows;
-    const q = filter.toLowerCase();
-    return rows.filter((row) => JSON.stringify(row).toLowerCase().includes(q));
-  }, [rows, filter]);
 
   const modelCounts: Record<ModelId, number> = {
     overview: 0,
@@ -224,19 +213,17 @@ function StudioShell({
   const showInitialSkeleton = initialLoading;
   const showNavigationSpinner = !initialLoading && isNavigating;
   const showContent = loadedModel === model && !initialLoading;
-  const showSearch = model !== "overview";
 
   const studioContext = useMemo(
     () =>
       buildStudioContext({
         model,
         modelLabel: currentModel.label,
-        filter,
         overview,
         liveOverview,
         counts: status?.counts,
         columns,
-        rows: filteredRows,
+        rows,
         secondaryTitle,
         secondaryRows,
         selectedRecord: selected,
@@ -244,12 +231,11 @@ function StudioShell({
     [
       model,
       currentModel.label,
-      filter,
       overview,
       liveOverview,
       status?.counts,
       columns,
-      filteredRows,
+      rows,
       secondaryTitle,
       secondaryRows,
       selected,
@@ -279,9 +265,9 @@ function StudioShell({
             items={[{ label: "Page views / min", value: liveOverview.pageViewsPerMinute }]}
           />
           <DataTable
-            title={`${filteredRows.length} records`}
+            title={`${rows.length} records`}
             description="Top pages in the last hour"
-            rows={filteredRows}
+            rows={rows}
             columns={columns}
             selected={selected}
             onSelect={setSelected}
@@ -298,8 +284,8 @@ function StudioShell({
           }
         >
           <DataTable
-            title={`${filteredRows.length} records`}
-            rows={filteredRows}
+            title={`${rows.length} records`}
+            rows={rows}
             columns={columns}
             selected={selected}
             onSelect={setSelected}
@@ -332,10 +318,10 @@ function StudioShell({
         onWidthChange={onLeftSidebarWidthChange}
       />
       <AssistantSidebarProvider>
-        <SidebarInset className="flex min-h-svh flex-col">
+        <SidebarInset className="flex min-h-0 flex-1 flex-col overflow-hidden md:mb-0 md:mr-0">
           <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b">
             <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" title="Toggle sidebar ([)" />
+              <SidebarTrigger title="Toggle sidebar ([)" />
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem className="hidden md:block">
@@ -352,13 +338,6 @@ function StudioShell({
               </Breadcrumb>
             </div>
             <div className="flex items-center gap-2 px-4">
-              {showSearch ? (
-                <SearchInput
-                  value={filter}
-                  onChange={setFilter}
-                  className="w-40 sm:w-56"
-                />
-              ) : null}
               <Button
                 variant="outline"
                 size="sm"
