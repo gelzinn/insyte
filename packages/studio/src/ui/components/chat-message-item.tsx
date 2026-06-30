@@ -98,7 +98,7 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
         <MessageContent className="max-w-[85%] gap-1.5">
           <span
             className={cn(
-              "pt-0.5 pb-2 text-xs leading-none font-medium text-muted-foreground",
+              "pt-1 pb-2 text-xs leading-none font-medium text-muted-foreground",
               isUser ? "self-end" : "self-start",
             )}
           >
@@ -124,33 +124,55 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
                 )}
               </BubbleContent>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    className={cn(
-                      "absolute top-1 size-7 cursor-pointer opacity-0 transition-opacity group-hover/bubble-row:opacity-100 focus-visible:opacity-100",
-                      isUser
-                        ? "left-1 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-                        : "right-1 hover:bg-foreground/5",
-                    )}
-                    aria-label="Message actions"
+              <div
+                className={cn(
+                  "absolute top-0 z-10 min-h-9 min-w-11 p-1 opacity-0 transition-opacity group-hover/bubble-row:opacity-100 has-[[data-state=open]]:opacity-100",
+                  isUser ? "left-0" : "right-0",
+                )}
+              >
+                <div
+                  aria-hidden="true"
+                  className={cn(
+                    "pointer-events-none absolute inset-0",
+                    isUser
+                      ? "rounded-tl-xl bg-gradient-to-r from-primary via-primary/90 to-transparent"
+                      : "rounded-tr-xl bg-gradient-to-l from-muted via-muted/90 to-transparent",
+                  )}
+                />
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className={cn(
+                        "relative z-[1] size-7 cursor-pointer",
+                        isUser
+                          ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                          : "hover:bg-foreground/5",
+                      )}
+                      aria-label="Message actions"
+                    >
+                      <MoreHorizontal className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align={isUser ? "start" : "end"}
+                    side="bottom"
+                    sideOffset={4}
+                    className="w-44"
                   >
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align={isUser ? "end" : "start"} className="w-44">
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => setInfoOpen(true)}
-                  >
-                    <Info className="size-4" />
-                    Message info
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => setInfoOpen(true)}
+                    >
+                      <Info className="size-4" />
+                      Message info
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </Bubble>
           </div>
         </MessageContent>
