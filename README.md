@@ -98,6 +98,26 @@ const bounceRate = await analytics.getBounceRate();
 const pageAnalytics = await analytics.getPageAnalytics();
 ```
 
+## 🎯 @insyte/track — Integração com providers (client-side)
+
+Pacote para integrar **Google Analytics**, **Mixpanel**, **PostHog**, **Segment**, **Amplitude**, **Plausible**, **Facebook Pixel**, **Microsoft Clarity** e **providers customizados** em qualquer app JavaScript.
+
+Funciona com React, Vue, Angular, Vite, Next.js e vanilla JS.
+
+```typescript
+import { setupAnalytics, googleAnalytics, mixpanel } from "@insyte/track";
+
+await setupAnalytics({
+  autoPageView: true,
+  providers: [
+    googleAnalytics({ measurementId: "G-XXXXXXXX" }),
+    mixpanel({ token: "YOUR_TOKEN" }),
+  ],
+});
+```
+
+Documentação completa: [`packages/track/README.md`](packages/track/README.md)
+
 ## 🎯 App de Demonstração (Next.js)
 
 O app de demonstração mostra como integrar a biblioteca em um projeto real.
@@ -203,7 +223,7 @@ Configure as variáveis apropriadas para seu banco de dados preferido.
 
 - [ ] Implementar autenticação de usuário
 - [ ] Adicionar dashboards customizáveis
-- [ ] Integrar com Google Analytics
+- [x] Integrar com Google Analytics (`@insyte/track`)
 - [ ] Implementar exportação de dados
 - [ ] Adicionar testes automatizados
 - [ ] Criar interface de administração
