@@ -1,4 +1,4 @@
-import { ArrowUpIcon, Bot, MessageCircleDashedIcon, MoreVertical } from "lucide-react";
+import { ArrowUpIcon, Bot, Check, MessageCircleDashedIcon, MoreVertical } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { MarkdownMessage } from "@/components/markdown-message";
 import { AssistantSettingsDialog } from "@/components/assistant-settings-dialog";
@@ -46,7 +46,6 @@ import {
   AI_PROVIDERS,
   type AssistantConfig,
   type ProviderId,
-  getModelLabel,
   getProvider,
   loadAssistantConfig,
   saveAssistantConfig,
@@ -141,7 +140,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
     const text = draft.trim();
     if (!text || sending) return;
 
-    if (!config.apiKey.trim() && config.providerId !== "grok-inc") {
+    if (!config.apiKey.trim()) {
       setError("Configure a provider and API key to start chatting.");
       setSettingsOpen(true);
       return;
@@ -182,12 +181,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
       <div className="flex items-center justify-between gap-2 px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
           <Bot className="size-4 shrink-0 text-primary" />
-          <div className="min-w-0">
-            <div className="text-sm font-semibold">Assistant</div>
-            <div className="truncate text-xs text-muted-foreground">
-              {getModelLabel(config)}
-            </div>
-          </div>
+          <div className="text-sm font-semibold">Assistant</div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -196,23 +190,29 @@ export function AssistantChat({ context }: AssistantChatProps) {
               <span className="sr-only">Assistant settings</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>Provider</DropdownMenuLabel>
             {Object.values(AI_PROVIDERS).map((item) => (
               <DropdownMenuItem
                 key={item.id}
+                className="flex w-full cursor-pointer items-center justify-between gap-3"
                 onClick={() =>
                   item.id === config.providerId
                     ? setSettingsOpen(true)
                     : switchProvider(item.id)
                 }
               >
-                {item.name}
-                {item.id === config.providerId ? " · active" : ""}
+                <span>{item.name}</span>
+                {item.id === config.providerId ? (
+                  <Check className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                ) : null}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => setSettingsOpen(true)}
+            >
               Configure provider…
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -305,7 +305,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
                     value={config.model}
                     onValueChange={(value) => updateConfig({ ...config, model: value })}
                   >
-                    <SelectTrigger className="h-8 w-[9.5rem] border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+                    <SelectTrigger className="h-8 w-[9.5rem] cursor-pointer border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
                       <SelectValue placeholder="Model" />
                     </SelectTrigger>
                     <SelectContent>

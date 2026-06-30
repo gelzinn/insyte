@@ -1,4 +1,4 @@
-export type ProviderId = "openrouter" | "groq" | "grok" | "grok-inc" | "custom";
+export type ProviderId = "openrouter" | "groq" | "grok" | "custom";
 
 export interface ProviderModel {
   id: string;
@@ -62,7 +62,7 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDefinition> = {
   },
   grok: {
     id: "grok",
-    name: "Grok (xAI)",
+    name: "Grok",
     description: "Official xAI developer API via api.x.ai.",
     docsUrl: "https://docs.x.ai/docs",
     defaultBaseUrl: "https://api.x.ai/v1",
@@ -79,28 +79,6 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDefinition> = {
       "Generate an API key with chat completion access.",
       "New accounts may receive promotional credits — add billing only if you need more.",
       "Paste the key below, keep the default api.x.ai base URL, and choose a model.",
-    ],
-  },
-  "grok-inc": {
-    id: "grok-inc",
-    name: "Grok (grok.com)",
-    description:
-      "Consumer Grok via a local OpenAI-compatible proxy (grok-web-api, grok-to-openai, etc.).",
-    docsUrl: "https://github.com/imjustprism/grok-web-api",
-    defaultBaseUrl: "http://127.0.0.1:3000/v1",
-    defaultModel: "grok-4.3-auto",
-    apiKeyPlaceholder: "local-proxy-key (optional)",
-    models: [
-      { id: "grok-4.3-auto", label: "Grok 4.3 Auto" },
-      { id: "grok-4.3", label: "Grok 4.3" },
-      { id: "grok-3", label: "Grok 3" },
-    ],
-    setupSteps: [
-      "Run a local OpenAI-compatible proxy for grok.com (e.g. grok-web-api on port 3000).",
-      "Sign in to grok.com in your browser and export the session cookies the proxy needs.",
-      "Start the proxy and confirm GET http://127.0.0.1:3000/v1/models responds.",
-      "Paste the proxy API key if required (many local proxies accept any string).",
-      "Keep the default base URL unless your proxy listens on another host or port.",
     ],
   },
   custom: {
@@ -147,8 +125,14 @@ export function loadAssistantConfig(): AssistantConfig {
     const raw = localStorage.getItem(ASSISTANT_CONFIG_STORAGE);
     if (!raw) return defaultAssistantConfig();
     const parsed = JSON.parse(raw) as Partial<AssistantConfig>;
-    const providerId = parsed.providerId ?? "openrouter";
-    const provider = AI_PROVIDERS[providerId] ?? AI_PROVIDERS.openrouter;
+    const storedProviderId = parsed.providerId ?? "openrouter";
+    const providerId =
+      storedProviderId === "grok-inc"
+        ? "grok"
+        : storedProviderId in AI_PROVIDERS
+          ? storedProviderId
+          : "openrouter";
+    const provider = AI_PROVIDERS[providerId as ProviderId] ?? AI_PROVIDERS.openrouter;
     return {
       providerId: provider.id,
       apiKey: parsed.apiKey ?? "",

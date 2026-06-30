@@ -73,6 +73,7 @@ export function MarkdownMessage({ content, className }: MarkdownMessageProps) {
         h2: ({ children }) => <h2 className="text-sm font-semibold">{children}</h2>,
         h3: ({ children }) => <h3 className="text-sm font-medium">{children}</h3>,
         hr: () => <hr className="border-current/15" />,
+        br: () => null,
         table: ({ children }) => (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-xs">{children}</table>

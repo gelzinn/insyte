@@ -98,9 +98,7 @@ export function AssistantSettingsDialog({
           </ol>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              API key{draft.providerId === "grok-inc" ? " (optional)" : ""}
-            </label>
+            <label className="text-xs font-medium text-muted-foreground">API key</label>
             <Input
               type="password"
               placeholder={provider.apiKeyPlaceholder}
