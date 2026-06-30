@@ -29,17 +29,20 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/geist": "^5.2.9",
     "@hono/node-server": "^1.14.4",
     "@radix-ui/react-scroll-area": "^1.2.9",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@shadcn/react": "^0.2.0",
+    "@tabler/icons-react": "^3.44.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "hono": "^4.7.11",
     "insyte": "workspace:*",
     "lucide-react": "^0.525.0",
     "radix-ui": "^1.6.0",
+    "shadcn": "^4.12.0",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
