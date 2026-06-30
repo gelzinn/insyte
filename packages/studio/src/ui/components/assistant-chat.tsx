@@ -296,7 +296,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
                     value={config.model}
                     onValueChange={(value) => updateConfig({ ...config, model: value })}
                   >
-                    <SelectTrigger className="h-8 w-[9.5rem] cursor-pointer border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+                    <SelectTrigger className="h-8 w-[9.5rem] cursor-pointer border-border/50 bg-muted px-2 text-xs shadow-none hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring/30">
                       <SelectValue placeholder="Model" />
                     </SelectTrigger>
                     <SelectContent>
@@ -314,7 +314,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
                       updateConfig({ ...config, model: event.target.value })
                     }
                     placeholder="Model ID"
-                    className="h-8 w-[9.5rem] bg-transparent px-2 text-xs outline-none placeholder:text-muted-foreground"
+                    className="h-8 w-[9.5rem] rounded-lg border border-border/50 bg-muted px-2 text-xs outline-none placeholder:text-muted-foreground hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring/30"
                   />
                 )}
                 <InputGroupButton

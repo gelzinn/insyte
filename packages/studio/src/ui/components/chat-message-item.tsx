@@ -159,7 +159,7 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
                     <DropdownMenuContent
                       align={isUser ? "start" : "end"}
                       side="bottom"
-                      sideOffset={2}
+                      sideOffset={6}
                       alignOffset={0}
                       collisionPadding={0}
                       avoidCollisions={false}
