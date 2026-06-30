@@ -82,27 +82,28 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
   const isUser = message.role === "user";
   const displayName = getMessageDisplayName(message);
 
+  const avatar = isUser ? (
+    <UserMessageAvatar />
+  ) : message.meta ? (
+    <ProviderMessageIcon providerId={message.meta.providerId} />
+  ) : (
+    <ProviderMessageIcon providerId="custom" />
+  );
+
   return (
     <>
-      <Message align={isUser ? "end" : "start"} className="items-start">
+      <Message align={isUser ? "end" : "start"} className="items-start gap-2.5">
+        <div className="flex shrink-0 self-start pt-0.5">{avatar}</div>
+
         <MessageContent className="max-w-[85%] gap-1.5">
-          <div
+          <span
             className={cn(
-              "flex items-center gap-2",
-              isUser ? "flex-row-reverse self-end" : "flex-row self-start",
+              "text-xs leading-none font-medium text-muted-foreground",
+              isUser ? "self-end" : "self-start",
             )}
           >
-            {isUser ? (
-              <UserMessageAvatar />
-            ) : message.meta ? (
-              <ProviderMessageIcon providerId={message.meta.providerId} />
-            ) : (
-              <ProviderMessageIcon providerId="custom" />
-            )}
-            <span className="text-xs leading-none font-medium text-muted-foreground">
-              {displayName}
-            </span>
-          </div>
+            {displayName}
+          </span>
 
           <div
             className={cn(
