@@ -168,7 +168,7 @@ export function AssistantSidebar({
         )}
         {...props}
       >
-        <div className="flex h-full w-full flex-col border-l border-sidebar-border bg-sidebar text-sidebar-foreground">
+        <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground">
           {children}
         </div>
       </div>

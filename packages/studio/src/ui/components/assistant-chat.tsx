@@ -1,6 +1,16 @@
-import { ArrowUpIcon, Bot, KeyRound, MessageCircleDashedIcon } from "lucide-react";
+import { ArrowUpIcon, Bot, MessageCircleDashedIcon, MoreVertical } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
+import { AssistantSettingsDialog } from "@/components/assistant-settings-dialog";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Empty,
   EmptyDescription,
@@ -8,7 +18,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
@@ -25,8 +34,24 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AI_PROVIDERS,
+  type AssistantConfig,
+  type ProviderId,
+  getModelLabel,
+  getProvider,
+  loadAssistantConfig,
+  saveAssistantConfig,
+} from "@/lib/ai-providers";
 
-const API_KEY_STORAGE = "insyte.openrouter.apiKey";
+const LEGACY_API_KEY_STORAGE = "insyte.openrouter.apiKey";
 
 export interface ChatMessage {
   id: string;
@@ -38,8 +63,18 @@ interface AssistantChatProps {
   context: string;
 }
 
+function migrateLegacyConfig(config: AssistantConfig): AssistantConfig {
+  if (config.apiKey) return config;
+  const legacy = localStorage.getItem(LEGACY_API_KEY_STORAGE);
+  if (!legacy) return config;
+  const next = { ...config, apiKey: legacy };
+  saveAssistantConfig(next);
+  localStorage.removeItem(LEGACY_API_KEY_STORAGE);
+  return next;
+}
+
 async function postChat(
-  apiKey: string,
+  config: AssistantConfig,
   messages: ChatMessage[],
   context: string,
 ): Promise<string> {
@@ -47,7 +82,10 @@ async function postChat(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      apiKey,
+      providerId: config.providerId,
+      apiKey: config.apiKey,
+      baseUrl: config.baseUrl,
+      model: config.model,
       messages: messages.map(({ role, content }) => ({ role, content })),
       context,
     }),
@@ -66,24 +104,35 @@ async function postChat(
 }
 
 export function AssistantChat({ context }: AssistantChatProps) {
-  const [apiKey, setApiKey] = useState("");
+  const [config, setConfig] = useState<AssistantConfig>(() =>
+    migrateLegacyConfig(loadAssistantConfig()),
+  );
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const provider = getProvider(config);
+
   useEffect(() => {
-    const stored = localStorage.getItem(API_KEY_STORAGE);
-    if (stored) setApiKey(stored);
+    setConfig(migrateLegacyConfig(loadAssistantConfig()));
   }, []);
 
-  function saveApiKey(value: string) {
-    setApiKey(value);
-    if (value.trim()) {
-      localStorage.setItem(API_KEY_STORAGE, value.trim());
-    } else {
-      localStorage.removeItem(API_KEY_STORAGE);
-    }
+  function updateConfig(next: AssistantConfig) {
+    saveAssistantConfig(next);
+    setConfig(next);
+  }
+
+  function switchProvider(providerId: ProviderId) {
+    const nextProvider = AI_PROVIDERS[providerId];
+    updateConfig({
+      providerId,
+      apiKey: config.apiKey,
+      baseUrl: nextProvider.defaultBaseUrl,
+      model: nextProvider.defaultModel,
+    });
+    setSettingsOpen(true);
   }
 
   async function handleSend(event?: FormEvent) {
@@ -91,8 +140,14 @@ export function AssistantChat({ context }: AssistantChatProps) {
     const text = draft.trim();
     if (!text || sending) return;
 
-    if (!apiKey.trim()) {
-      setError("Add your OpenRouter API key to start chatting.");
+    if (!config.apiKey.trim()) {
+      setError("Configure a provider and API key to start chatting.");
+      setSettingsOpen(true);
+      return;
+    }
+
+    if (!config.model.trim()) {
+      setError("Choose a model before sending.");
       return;
     }
 
@@ -109,7 +164,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
     setMessages(nextMessages);
 
     try {
-      const reply = await postChat(apiKey, nextMessages, context);
+      const reply = await postChat(config, nextMessages, context);
       setMessages([
         ...nextMessages,
         { id: crypto.randomUUID(), role: "assistant", content: reply },
@@ -123,44 +178,48 @@ export function AssistantChat({ context }: AssistantChatProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Bot className="size-4 text-primary" />
-          <div>
-            <h3 className="text-sm font-semibold">Assistant</h3>
-            <p className="text-[11px] text-muted-foreground">OpenRouter · free models</p>
+      <div className="flex items-center justify-between gap-2 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Bot className="size-4 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <div className="text-sm font-semibold">Assistant</div>
+            <div className="truncate text-xs text-muted-foreground">
+              {getModelLabel(config)}
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="space-y-2 border-b px-4 py-3">
-        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <KeyRound className="size-3.5" />
-          OpenRouter API key
-        </label>
-        <Input
-          type="password"
-          placeholder="sk-or-..."
-          value={apiKey}
-          onChange={(event) => saveApiKey(event.target.value)}
-          className="h-8"
-        />
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Get a free key at{" "}
-          <a
-            href="https://openrouter.ai/keys"
-            target="_blank"
-            rel="noreferrer"
-            className="text-foreground underline-offset-2 hover:underline"
-          >
-            openrouter.ai/keys
-          </a>
-          . Uses <code className="rounded bg-muted px-1">openrouter/free</code>.
-        </p>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="size-7 shrink-0">
+              <MoreVertical className="size-4" />
+              <span className="sr-only">Assistant settings</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel>Provider</DropdownMenuLabel>
+            {Object.values(AI_PROVIDERS).map((item) => (
+              <DropdownMenuItem
+                key={item.id}
+                onClick={() =>
+                  item.id === config.providerId
+                    ? setSettingsOpen(true)
+                    : switchProvider(item.id)
+                }
+              >
+                {item.name}
+                {item.id === config.providerId ? " · active" : ""}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+              Configure provider…
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {error ? (
-        <div className="mx-4 mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+        <div className="mx-4 mb-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           {error}
         </div>
       ) : null}
@@ -218,7 +277,7 @@ export function AssistantChat({ context }: AssistantChatProps) {
             </MessageScroller>
           )}
 
-          <form onSubmit={(event) => void handleSend(event)} className="border-t p-4">
+          <form onSubmit={(event) => void handleSend(event)} className="p-4 pt-0">
             <InputGroup>
               <InputGroupTextarea
                 value={draft}
@@ -233,7 +292,33 @@ export function AssistantChat({ context }: AssistantChatProps) {
                 rows={2}
                 disabled={sending}
               />
-              <InputGroupAddon align="block-end" className="pt-1">
+              <InputGroupAddon align="block-end" className="gap-1 pt-1">
+                {provider.models.length > 0 ? (
+                  <Select
+                    value={config.model}
+                    onValueChange={(value) => updateConfig({ ...config, model: value })}
+                  >
+                    <SelectTrigger className="h-8 w-[9.5rem] border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0">
+                      <SelectValue placeholder="Model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {provider.models.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <input
+                    value={config.model}
+                    onChange={(event) =>
+                      updateConfig({ ...config, model: event.target.value })
+                    }
+                    placeholder="Model ID"
+                    className="h-8 w-[9.5rem] bg-transparent px-2 text-xs outline-none placeholder:text-muted-foreground"
+                  />
+                )}
                 <InputGroupButton
                   type="submit"
                   variant="default"
@@ -249,6 +334,13 @@ export function AssistantChat({ context }: AssistantChatProps) {
           </form>
         </div>
       </MessageScrollerProvider>
+
+      <AssistantSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        config={config}
+        onSave={updateConfig}
+      />
     </div>
   );
 }
