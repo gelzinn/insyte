@@ -1,6 +1,7 @@
 import { ArrowUpIcon, Bot, MessageCircleDashedIcon, MoreVertical } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { MarkdownMessage } from "@/components/markdown-message";
+import { AssistantSettingsDialog } from "@/components/assistant-settings-dialog";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
 import {
