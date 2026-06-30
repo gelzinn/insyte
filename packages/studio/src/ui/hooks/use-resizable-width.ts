@@ -58,12 +58,18 @@ export function startWidthDrag(options: {
   const handleUp = () => {
     window.removeEventListener("pointermove", handleMove);
     window.removeEventListener("pointerup", handleUp);
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
+    finishWidthDrag();
   };
 
   document.body.style.cursor = "col-resize";
   document.body.style.userSelect = "none";
+  document.body.dataset.sidebarResizing = "true";
   window.addEventListener("pointermove", handleMove);
   window.addEventListener("pointerup", handleUp);
+}
+
+function finishWidthDrag() {
+  document.body.style.cursor = "";
+  document.body.style.userSelect = "";
+  delete document.body.dataset.sidebarResizing;
 }
