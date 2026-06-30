@@ -20,12 +20,27 @@ bun run dev:apps
 ## What each demo does
 
 - Console provider (`demo-console`) — events appear in DevTools
+- **Insyte Studio collector** — events sent to local studio in dev (`http://127.0.0.1:5555`)
 - Consent banner (GDPR)
 - Button to fire `demo_button_clicked` event
 - Auto pageview after accepting cookies
+
+## Local analytics studio
+
+```bash
+# Terminal 1
+bun run studio
+
+# Terminal 2
+bun run dev:react   # or dev:next, dev:vue, dev:angular
+```
+
+Open http://127.0.0.1:5555, accept cookies in the demo app, and browse unified analytics.
 
 ## Optional environment variables
 
 ```env
 NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXX
+VITE_INSYTE_STUDIO_URL=http://127.0.0.1:5555
+NEXT_PUBLIC_INSYTE_STUDIO_URL=http://127.0.0.1:5555
 ```

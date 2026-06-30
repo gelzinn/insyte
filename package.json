@@ -11,7 +11,8 @@
   ],
   "scripts": {
     "build": "turbo run build --filter=*",
-    "build:lib": "turbo run build --filter=analytics... --filter=@insyte/track...",
+    "build:lib": "turbo run build --filter=insyte... --filter=@insyte/track... --filter=@insyte/studio...",
+    "build:studio": "turbo run build --filter=@insyte/studio...",
     "build:app": "turbo run build --filter=test-next...",
     "build:apps": "turbo run build --filter=test-next --filter=test-react --filter=test-vue --filter=test-angular",
     "clean": "turbo run clean",
@@ -22,6 +23,7 @@
     "dev:vue": "cd apps/test-vue && bun run dev",
     "dev:angular": "cd apps/test-angular && bun run start",
     "dev:apps": "turbo run dev --filter=test-next --filter=test-react --filter=test-vue --filter=test-angular --parallel",
+    "studio": "bunx tsx packages/studio/src/cli.ts --port 5555 --database .insyte/analytics.db",
     "dev:app": "cd apps/test-next && bun run dev",
     "start:app": "cd apps/test-next && bun run start",
     "type-check": "turbo run type-check",

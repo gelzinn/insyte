@@ -11,6 +11,7 @@ export const DEFAULT_PROVIDER_CATEGORIES: Record<string, ConsentCategory> = {
   heap: "analytics",
   rudderstack: "analytics",
   hotjar: "analytics",
+  insyte: "analytics",
   clarity: "analytics",
   "facebook-pixel": "marketing",
 };

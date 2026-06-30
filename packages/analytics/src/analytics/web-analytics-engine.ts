@@ -2,16 +2,19 @@ import type { BaseConnector } from "../connectors/base-connector";
 import { SQLiteConnector } from "../connectors/sqlite-connector";
 import type {
   AnalyticsConfig,
+  AnalyticsOverview,
   BounceRate,
   CampaignAnalytics,
+  CustomEvent,
+  EventTrigger,
   PageAnalytics,
   PageView,
   RealTimeAnalytics,
+  RecentEvent,
+  RecentPageview,
   TrafficSource,
   UserInfo,
   UTMParams,
-  CustomEvent,
-  EventTrigger,
 } from "../types";
 import { GeoLocationService } from "../utils/geo-location-service";
 import { TrafficSourceDetector } from "../utils/traffic-source-detector";
@@ -566,6 +569,139 @@ export class WebAnalyticsEngine {
       topSources: [],
       geographic: [],
     };
+  }
+
+  async getOverview(period?: { start: Date; end: Date }): Promise<AnalyticsOverview> {
+    if (!this.connector) throw new Error("Database not connected");
+
+    const end = period?.end ?? new Date();
+    const start = period?.start ?? new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const pageviewStats = await this.connector.query(
+      `
+      SELECT
+        COUNT(*) as total_pageviews,
+        COUNT(DISTINCT session_id) as unique_sessions,
+        COUNT(DISTINCT user_id) as unique_users
+      FROM ${this.tableNames.pageviews}
+      WHERE timestamp BETWEEN ? AND ?
+    `,
+      [start, end],
+    );
+
+    const eventStats = await this.connector.query(
+      `
+      SELECT COUNT(*) as total_events
+      FROM ${this.tableNames.events}
+      WHERE timestamp BETWEEN ? AND ?
+    `,
+      [start, end],
+    );
+
+    const pageRow = pageviewStats.data[0] ?? {};
+    const eventRow = eventStats.data[0] ?? {};
+
+    return {
+      totalPageviews: pageRow.total_pageviews ?? 0,
+      totalEvents: eventRow.total_events ?? 0,
+      uniqueSessions: pageRow.unique_sessions ?? 0,
+      uniqueUsers: pageRow.unique_users ?? 0,
+      period: { start, end },
+    };
+  }
+
+  async getRecentPageviews(limit = 50, offset = 0): Promise<RecentPageview[]> {
+    if (!this.connector) throw new Error("Database not connected");
+
+    const result = await this.connector.query(
+      `
+      SELECT
+        id, session_id, user_id, url, path, hostname, referrer,
+        timestamp, duration, is_exit, is_bounce
+      FROM ${this.tableNames.pageviews}
+      ORDER BY timestamp DESC
+      LIMIT ? OFFSET ?
+    `,
+      [limit, offset],
+    );
+
+    return result.data.map((row: Record<string, unknown>) => {
+      const pageview: RecentPageview = {
+        id: row.id as number,
+        sessionId: row.session_id as string,
+        url: row.url as string,
+        path: row.path as string,
+        hostname: row.hostname as string,
+        timestamp: new Date(row.timestamp as string),
+        isExit: Boolean(row.is_exit),
+        isBounce: Boolean(row.is_bounce),
+      };
+
+      const userId = row.user_id as string | null | undefined;
+      if (userId) {
+        pageview.userId = userId;
+      }
+
+      const referrer = row.referrer as string | null | undefined;
+      if (referrer) {
+        pageview.referrer = referrer;
+      }
+
+      const duration = row.duration as number | null | undefined;
+      if (duration) {
+        pageview.duration = duration;
+      }
+
+      return pageview;
+    });
+  }
+
+  async getRecentEvents(limit = 50, offset = 0): Promise<RecentEvent[]> {
+    if (!this.connector) throw new Error("Database not connected");
+
+    const result = await this.connector.query(
+      `
+      SELECT id, session_id, user_id, event_type, event_data, url, timestamp
+      FROM ${this.tableNames.events}
+      ORDER BY timestamp DESC
+      LIMIT ? OFFSET ?
+    `,
+      [limit, offset],
+    );
+
+    return result.data.map((row: Record<string, unknown>) => {
+      let eventData: Record<string, unknown> | undefined;
+      if (row.event_data) {
+        try {
+          eventData = JSON.parse(row.event_data as string) as Record<string, unknown>;
+        } catch {
+          eventData = undefined;
+        }
+      }
+
+      const event: RecentEvent = {
+        id: row.id as number,
+        sessionId: row.session_id as string,
+        eventType: row.event_type as string,
+        timestamp: new Date(row.timestamp as string),
+      };
+
+      const userId = row.user_id as string | null | undefined;
+      if (userId) {
+        event.userId = userId;
+      }
+
+      if (eventData) {
+        event.eventData = eventData;
+      }
+
+      const url = row.url as string | null | undefined;
+      if (url) {
+        event.url = url;
+      }
+
+      return event;
+    });
   }
 
   /**

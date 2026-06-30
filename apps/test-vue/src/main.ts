@@ -1,5 +1,5 @@
 import { createApp } from "vue";
-import { createCustomProvider } from "@insyte/track";
+import { createCustomProvider, insyte } from "@insyte/track";
 import { ANALYTICS_INJECTION_KEY, createInsyteAnalyticsPlugin } from "@insyte/track/vue";
 import App from "./App.vue";
 import "./style.css";
@@ -17,6 +17,16 @@ const demoProvider = createCustomProvider({
   },
 });
 
+const studioUrl =
+  import.meta.env.VITE_INSYTE_STUDIO_URL ??
+  (import.meta.env.DEV ? "http://127.0.0.1:5555" : undefined);
+
+const providers = [demoProvider];
+
+if (studioUrl) {
+  providers.push(insyte({ studioUrl, debug: import.meta.env.DEV }));
+}
+
 const analyticsPlugin = createInsyteAnalyticsPlugin({
   autoInit: false,
   autoPageView: true,
@@ -27,7 +37,7 @@ const analyticsPlugin = createInsyteAnalyticsPlugin({
     storageKey: "insyte-consent",
     defaultConsent: { necessary: true, analytics: false, marketing: false },
   },
-  providers: [demoProvider],
+  providers,
 });
 
 const app = createApp(App);

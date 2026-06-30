@@ -144,6 +144,30 @@ export class SignupComponent {
 | `hotjar` | Hotjar | Yes |
 | `facebookPixel` | Meta Pixel | No |
 | `clarity` | Microsoft Clarity | Yes |
+| `insyte` | Insyte Studio (local) | Yes |
+
+## Local studio (Insyte Studio)
+
+Send all events to a local dashboard during development — similar to Prisma Studio:
+
+```typescript
+import { insyte, googleAnalytics, setupAnalytics } from "@insyte/track";
+
+await setupAnalytics({
+  providers: [
+    insyte({ studioUrl: "http://127.0.0.1:5555" }),
+    googleAnalytics({ measurementId: "G-XXX" }),
+  ],
+});
+```
+
+Start the studio from the monorepo root:
+
+```bash
+bun run studio
+```
+
+See [`@insyte/studio`](../studio/README.md) for CLI options and API details.
 
 ## Consent / GDPR
 

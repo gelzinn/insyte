@@ -242,6 +242,41 @@ export interface AnalyticsConfig {
   };
 }
 
+export interface AnalyticsOverview {
+  totalPageviews: number;
+  totalEvents: number;
+  uniqueSessions: number;
+  uniqueUsers: number;
+  period: {
+    start: Date;
+    end: Date;
+  };
+}
+
+export interface RecentPageview {
+  id: number;
+  sessionId: string;
+  userId?: string;
+  url: string;
+  path: string;
+  hostname: string;
+  referrer?: string;
+  timestamp: Date;
+  duration?: number;
+  isExit: boolean;
+  isBounce: boolean;
+}
+
+export interface RecentEvent {
+  id: number;
+  sessionId: string;
+  userId?: string;
+  eventType: string;
+  eventData?: Record<string, unknown>;
+  url?: string;
+  timestamp: Date;
+}
+
 export interface AnalyticsEvent {
   type: "pageview" | "event" | "conversion" | "error";
   sessionId: string;
