@@ -1,4 +1,4 @@
-export type ProviderId = "openrouter" | "grok" | "grok-inc" | "custom";
+export type ProviderId = "openrouter" | "groq" | "grok" | "grok-inc" | "custom";
 
 export interface ProviderModel {
   id: string;
@@ -36,6 +36,28 @@ export const AI_PROVIDERS: Record<ProviderId, ProviderDefinition> = {
       "Go to Keys and create a new API key.",
       "Paste the key below and pick a model (Free router is a good default).",
       "Send a message in the assistant to verify the connection.",
+    ],
+  },
+  groq: {
+    id: "groq",
+    name: "Groq",
+    description: "Groq Inc fast inference API (OpenAI-compatible, not xAI Grok).",
+    docsUrl: "https://console.groq.com/docs",
+    defaultBaseUrl: "https://api.groq.com/openai/v1",
+    defaultModel: "llama-3.3-70b-versatile",
+    apiKeyPlaceholder: "gsk_...",
+    models: [
+      { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
+      { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant" },
+      { id: "gemma2-9b-it", label: "Gemma 2 9B" },
+      { id: "mixtral-8x7b-32768", label: "Mixtral 8x7B" },
+    ],
+    setupSteps: [
+      "Open console.groq.com and create a free account.",
+      "Go to API Keys and create a new key.",
+      "Paste the key below and keep the default api.groq.com base URL.",
+      "Pick a model — Llama 3.3 70B is a strong default for analytics questions.",
+      "Send a test message in the assistant to verify the connection.",
     ],
   },
   grok: {

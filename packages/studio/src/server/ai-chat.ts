@@ -5,7 +5,7 @@ export interface ChatMessage {
   content: string;
 }
 
-export type ProviderId = "openrouter" | "grok" | "grok-inc" | "custom";
+export type ProviderId = "openrouter" | "groq" | "grok" | "grok-inc" | "custom";
 
 export interface AiChatRequest {
   providerId: ProviderId;
@@ -22,6 +22,10 @@ function resolveChatUrl(providerId: ProviderId, baseUrl?: string): string {
     return trimmed.endsWith("/chat/completions")
       ? trimmed
       : `${trimmed}/chat/completions`;
+  }
+
+  if (providerId === "groq") {
+    return "https://api.groq.com/openai/v1/chat/completions";
   }
 
   if (providerId === "grok") {
