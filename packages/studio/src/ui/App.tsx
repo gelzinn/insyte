@@ -7,7 +7,13 @@ import {
   AssistantSidebarProvider,
   AssistantSidebarTrigger,
 } from "@/components/assistant-sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { useResizableWidth } from "@/hooks/use-resizable-width";
+import {
+  AppSidebar,
+  LEFT_SIDEBAR_DEFAULT_WIDTH,
+  LEFT_SIDEBAR_MAX_WIDTH,
+  LEFT_SIDEBAR_MIN_WIDTH,
+} from "@/components/app-sidebar";
 import {
   DataTable,
   EmptyOverview,
@@ -49,9 +55,11 @@ interface LiveOverview {
   pageViewsPerMinute: number;
 }
 
+const LEFT_SIDEBAR_WIDTH_KEY = "insyte.sidebar.width";
+
 function ContentSkeleton() {
   return (
-    <div className="space-y-4 pt-4">
+    <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-28 rounded-xl" />
@@ -64,13 +72,19 @@ function ContentSkeleton() {
 
 function ContentSpinner() {
   return (
-    <div className="flex min-h-[320px] items-center justify-center pt-4">
+    <div className="flex min-h-[320px] items-center justify-center">
       <RefreshCw className="size-6 animate-spin text-muted-foreground" />
     </div>
   );
 }
 
-function StudioShell() {
+function StudioShell({
+  leftSidebarWidth,
+  onLeftSidebarWidthChange,
+}: {
+  leftSidebarWidth: number;
+  onLeftSidebarWidthChange: (width: number) => void;
+}) {
   const [model, setModel] = useState<ModelId>("pageviews");
   const [filter, setFilter] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
@@ -245,7 +259,7 @@ function StudioShell() {
   function renderContent() {
     if (loadedModel === "overview" && overview) {
       return (
-        <div className="space-y-6 pt-4">
+        <div className="space-y-6">
           <MetricCards
             items={[
               { label: "Page views", value: overview.totalPageviews },
@@ -260,7 +274,7 @@ function StudioShell() {
 
     if (loadedModel === "live" && liveOverview) {
       return (
-        <div className="space-y-6 pt-4">
+        <div className="space-y-6">
           <MetricCards
             items={[{ label: "Page views / min", value: liveOverview.pageViewsPerMinute }]}
           />
@@ -280,7 +294,7 @@ function StudioShell() {
       return (
         <div
           className={
-            secondaryRows.length ? "grid gap-6 pt-4 xl:grid-cols-2" : "space-y-6 pt-4"
+            secondaryRows.length ? "grid gap-6 xl:grid-cols-2" : "space-y-6"
           }
         >
           <DataTable
@@ -314,10 +328,12 @@ function StudioShell() {
         onModelChange={setModel}
         counts={modelCounts}
         database={status?.database}
+        width={leftSidebarWidth}
+        onWidthChange={onLeftSidebarWidthChange}
       />
       <AssistantSidebarProvider>
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b">
+        <SidebarInset className="flex min-h-svh flex-col">
+          <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b">
             <div className="flex items-center gap-2 px-4">
               <SidebarTrigger className="-ml-1" title="Toggle sidebar ([)" />
               <Breadcrumb>
@@ -363,7 +379,7 @@ function StudioShell() {
           ) : null}
 
           <div className="flex min-h-0 flex-1">
-            <div className="relative min-w-0 flex-1 overflow-auto p-4 pt-0">
+            <div className="relative min-h-0 min-w-0 flex-1 overflow-auto p-4">
               {showInitialSkeleton ? <ContentSkeleton /> : null}
               {showNavigationSpinner ? <ContentSpinner /> : null}
               {showContent ? (
@@ -392,9 +408,25 @@ function StudioShell() {
 }
 
 export default function App() {
+  const { width: leftSidebarWidth, setWidth: setLeftSidebarWidth } = useResizableWidth(
+    LEFT_SIDEBAR_WIDTH_KEY,
+    LEFT_SIDEBAR_DEFAULT_WIDTH,
+    LEFT_SIDEBAR_MIN_WIDTH,
+    LEFT_SIDEBAR_MAX_WIDTH,
+  );
+
   return (
-    <SidebarProvider>
-      <StudioShell />
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": `${leftSidebarWidth}px`,
+        } as React.CSSProperties
+      }
+    >
+      <StudioShell
+        leftSidebarWidth={leftSidebarWidth}
+        onLeftSidebarWidthChange={setLeftSidebarWidth}
+      />
     </SidebarProvider>
   );
 }

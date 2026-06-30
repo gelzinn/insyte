@@ -17,12 +17,12 @@ export function SearchInput({
   return (
     <label
       className={cn(
-        "flex h-9 min-w-0 items-center gap-2 rounded-lg border border-input bg-background px-3 transition-colors",
+        "flex h-8 min-w-0 items-center gap-2 rounded-lg border border-input bg-background px-3 transition-colors",
         "focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
         className,
       )}
     >
-      <Search className="size-[18px] shrink-0 text-muted-foreground" aria-hidden="true" />
+      <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <input
         type="text"
         role="search"

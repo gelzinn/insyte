@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { PanelRightIcon } from "lucide-react";
+import { SidebarResizeRail } from "@/components/sidebar-resize-rail";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useResizableWidth } from "@/hooks/use-resizable-width";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -15,7 +17,10 @@ import { cn } from "@/lib/utils";
 
 const ASSISTANT_SIDEBAR_COOKIE = "assistant_sidebar_state";
 const ASSISTANT_SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const ASSISTANT_SIDEBAR_WIDTH = "24rem";
+export const ASSISTANT_SIDEBAR_DEFAULT_WIDTH = 384;
+export const ASSISTANT_SIDEBAR_MIN_WIDTH = 384;
+export const ASSISTANT_SIDEBAR_MAX_WIDTH = 640;
+const ASSISTANT_SIDEBAR_WIDTH_KEY = "insyte.assistant.width";
 
 type AssistantSidebarContextProps = {
   open: boolean;
@@ -24,6 +29,8 @@ type AssistantSidebarContextProps = {
   setOpenMobile: (open: boolean) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
+  width: number;
+  setWidth: (width: number) => void;
 };
 
 const AssistantSidebarContext = React.createContext<AssistantSidebarContextProps | null>(
@@ -48,6 +55,12 @@ export function AssistantSidebarProvider({
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = React.useState(false);
   const [open, setOpen] = React.useState(defaultOpen);
+  const { width, setWidth } = useResizableWidth(
+    ASSISTANT_SIDEBAR_WIDTH_KEY,
+    ASSISTANT_SIDEBAR_DEFAULT_WIDTH,
+    ASSISTANT_SIDEBAR_MIN_WIDTH,
+    ASSISTANT_SIDEBAR_MAX_WIDTH,
+  );
 
   const setOpenState = React.useCallback((value: boolean | ((value: boolean) => boolean)) => {
     setOpen((current) => {
@@ -96,8 +109,10 @@ export function AssistantSidebarProvider({
       setOpenMobile,
       isMobile,
       toggleSidebar,
+      width,
+      setWidth,
     }),
-    [open, openMobile, isMobile, setOpenState, toggleSidebar],
+    [open, openMobile, isMobile, setOpenState, toggleSidebar, width, setWidth],
   );
 
   return (
@@ -106,7 +121,7 @@ export function AssistantSidebarProvider({
         data-slot="assistant-sidebar-wrapper"
         style={
           {
-            "--assistant-sidebar-width": ASSISTANT_SIDEBAR_WIDTH,
+            "--assistant-sidebar-width": `${width}px`,
             ...style,
           } as React.CSSProperties
         }
@@ -124,7 +139,7 @@ export function AssistantSidebar({
   children,
   ...props
 }: React.ComponentProps<"div">) {
-  const { open, isMobile, openMobile, setOpenMobile } = useAssistantSidebar();
+  const { open, isMobile, openMobile, setOpenMobile, width, setWidth } = useAssistantSidebar();
 
   if (isMobile) {
     return (
@@ -135,7 +150,7 @@ export function AssistantSidebar({
           className="w-(--assistant-sidebar-width) max-w-[90vw] bg-sidebar p-0 text-sidebar-foreground duration-300 [&>button]:hidden"
           style={
             {
-              "--assistant-sidebar-width": ASSISTANT_SIDEBAR_WIDTH,
+              "--assistant-sidebar-width": `${width}px`,
             } as React.CSSProperties
           }
         >
@@ -162,13 +177,22 @@ export function AssistantSidebar({
         data-slot="assistant-sidebar"
         data-state={open ? "expanded" : "collapsed"}
         className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--assistant-sidebar-width) transition-[right,width] duration-300 ease-in-out md:flex",
+          "fixed inset-y-0 z-10 hidden h-svh w-(--assistant-sidebar-width) transition-[right] duration-300 ease-in-out md:flex",
           open ? "right-0" : "right-[calc(var(--assistant-sidebar-width)*-1)]",
           className,
         )}
         {...props}
       >
-        <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground">
+        <div className="relative flex h-svh w-full flex-col bg-sidebar text-sidebar-foreground">
+          {open ? (
+            <SidebarResizeRail
+              side="right"
+              width={width}
+              minWidth={ASSISTANT_SIDEBAR_MIN_WIDTH}
+              maxWidth={ASSISTANT_SIDEBAR_MAX_WIDTH}
+              onWidthChange={setWidth}
+            />
+          ) : null}
           {children}
         </div>
       </div>
@@ -187,8 +211,8 @@ export function AssistantSidebarTrigger({
     <Button
       data-slot="assistant-sidebar-trigger"
       variant="ghost"
-      size="icon"
-      className={cn("size-7", className)}
+      size="icon-sm"
+      className={cn("size-8", className)}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
