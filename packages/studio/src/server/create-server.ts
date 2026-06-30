@@ -8,6 +8,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createStudioEngine, getDatabasePath, getStudioEngine } from "./engine";
 import { handleIngest, type IngestPayload } from "./ingest";
+import { handleAiChat } from "./ai-chat";
 
 export interface StudioServerOptions {
   port?: number;
@@ -122,6 +123,12 @@ export async function createStudioApp(options: StudioServerOptions = {}) {
     const engine = getStudioEngine();
     const result = await handleIngest(engine, payload);
     return c.json(result);
+  });
+
+  app.post("/api/ai/chat", async (c) => {
+    const body = await c.req.json();
+    const result = await handleAiChat(body);
+    return c.json(result.data, result.status);
   });
 
   app.post("/api/query", async (c) => {

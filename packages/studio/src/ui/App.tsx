@@ -1,7 +1,34 @@
+import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson } from "./api";
-
-type ModelId = "overview" | "pageviews" | "events" | "traffic" | "live";
+import { AssistantChat } from "@/components/assistant-chat";
+import {
+  AssistantSidebar,
+  AssistantSidebarProvider,
+  AssistantSidebarTrigger,
+} from "@/components/assistant-sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import {
+  DataTable,
+  EmptyOverview,
+  RecordDetailPanel,
+} from "@/components/data-table";
+import { LiveIndicator } from "@/components/live-indicator";
+import { MetricCards } from "@/components/metric-cards";
+import { SearchInput } from "@/components/search-input";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { buildStudioContext } from "@/lib/studio-context";
+import { cn } from "@/lib/utils";
+import { MODELS, type ModelId } from "@/lib/models";
 
 interface Status {
   database: string;
@@ -9,7 +36,6 @@ interface Status {
     pageviews: number;
     events: number;
     sessions: number;
-    users: number;
   };
 }
 
@@ -17,24 +43,43 @@ interface Overview {
   totalPageviews: number;
   totalEvents: number;
   uniqueSessions: number;
-  uniqueUsers: number;
 }
 
-const MODELS: Array<{ id: ModelId; label: string; icon: string }> = [
-  { id: "overview", label: "Overview", icon: "◆" },
-  { id: "pageviews", label: "pageviews", icon: "▤" },
-  { id: "events", label: "events", icon: "⚡" },
-  { id: "traffic", label: "traffic_sources", icon: "↗" },
-  { id: "live", label: "live", icon: "●" },
-];
+interface LiveOverview {
+  pageViewsPerMinute: number;
+}
 
-export default function App() {
+function ContentSkeleton() {
+  return (
+    <div className="space-y-4 pt-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-xl" />
+        ))}
+      </div>
+      <Skeleton className="h-64 rounded-xl" />
+    </div>
+  );
+}
+
+function ContentSpinner() {
+  return (
+    <div className="flex min-h-[320px] items-center justify-center pt-4">
+      <RefreshCw className="size-6 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
+
+function StudioShell() {
   const [model, setModel] = useState<ModelId>("pageviews");
   const [filter, setFilter] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadedModel, setLoadedModel] = useState<ModelId | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
+  const [liveOverview, setLiveOverview] = useState<LiveOverview | null>(null);
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
@@ -42,79 +87,104 @@ export default function App() {
   const [secondaryColumns, setSecondaryColumns] = useState<string[]>([]);
   const [secondaryTitle, setSecondaryTitle] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(
+    async (options?: { silent?: boolean }) => {
+      const silent = options?.silent ?? false;
 
-    try {
-      const nextStatus = await fetchJson<Status>("/api/status");
-      setStatus(nextStatus);
-
-      if (model === "overview") {
-        setOverview(await fetchJson<Overview>("/api/overview"));
-        setRows([]);
-        setColumns([]);
-        setSecondaryRows([]);
-        return;
+      if (!silent && !initialLoading) {
+        setRefreshing(true);
       }
 
-      if (model === "pageviews") {
-        const data = await fetchJson<{ recent: Record<string, unknown>[]; aggregated: Record<string, unknown>[] }>(
-          "/api/pageviews",
-        );
-        setRows(data.recent);
-        setColumns(["path", "url", "sessionId", "referrer", "duration", "timestamp"]);
-        setSecondaryTitle("Top pages");
-        setSecondaryRows(data.aggregated);
-        setSecondaryColumns(["path", "views", "uniqueViews", "bounceRate", "exitRate"]);
-        return;
-      }
+      setError(null);
 
-      if (model === "events") {
-        const data = await fetchJson<{ events: Record<string, unknown>[] }>("/api/events");
-        setRows(data.events);
-        setColumns(["eventType", "sessionId", "userId", "url", "timestamp"]);
-        setSecondaryRows([]);
-        return;
-      }
-
-      if (model === "traffic") {
-        const data = await fetchJson<{ sources: Record<string, unknown>[]; campaigns: Record<string, unknown>[] }>(
-          "/api/traffic",
-        );
-        setRows(data.sources);
-        setColumns(["source", "count", "percentage"]);
-        setSecondaryTitle("Campaigns");
-        setSecondaryRows(data.campaigns);
-        setSecondaryColumns(["campaignName", "source", "medium", "sessions"]);
-        return;
-      }
-
-      if (model === "live") {
-        const data = await fetchJson<{ activeUsers: number; pageViewsPerMinute: number; topPages: Record<string, unknown>[] }>(
-          "/api/live",
-        );
-        setOverview({
-          totalPageviews: data.pageViewsPerMinute,
-          totalEvents: data.activeUsers,
-          uniqueSessions: 0,
-          uniqueUsers: data.activeUsers,
+      try {
+        const nextStatus = await fetchJson<
+          Status & { counts: Status["counts"] & { users?: number } }
+        >("/api/status");
+        setStatus({
+          database: nextStatus.database,
+          counts: {
+            pageviews: nextStatus.counts.pageviews,
+            events: nextStatus.counts.events,
+            sessions: nextStatus.counts.sessions,
+          },
         });
-        setRows(data.topPages);
-        setColumns(["url", "views"]);
-        setSecondaryRows([]);
+
+        if (model === "overview") {
+          const data = await fetchJson<Overview & { uniqueUsers?: number }>("/api/overview");
+          setOverview({
+            totalPageviews: data.totalPageviews,
+            totalEvents: data.totalEvents,
+            uniqueSessions: data.uniqueSessions,
+          });
+          setLiveOverview(null);
+          setRows([]);
+          setColumns([]);
+          setSecondaryRows([]);
+        } else if (model === "pageviews") {
+          const data = await fetchJson<{
+            recent: Record<string, unknown>[];
+            aggregated: Record<string, unknown>[];
+          }>("/api/pageviews");
+          setOverview(null);
+          setLiveOverview(null);
+          setRows(data.recent);
+          setColumns(["path", "url", "sessionId", "referrer", "duration", "timestamp"]);
+          setSecondaryTitle("Top pages");
+          setSecondaryRows(data.aggregated);
+          setSecondaryColumns(["path", "views", "uniqueViews", "bounceRate", "exitRate"]);
+        } else if (model === "events") {
+          const data = await fetchJson<{ events: Record<string, unknown>[] }>("/api/events");
+          setOverview(null);
+          setLiveOverview(null);
+          setRows(data.events);
+          setColumns(["eventType", "sessionId", "url", "timestamp"]);
+          setSecondaryRows([]);
+        } else if (model === "traffic") {
+          const data = await fetchJson<{
+            sources: Record<string, unknown>[];
+            campaigns: Record<string, unknown>[];
+          }>("/api/traffic");
+          setOverview(null);
+          setLiveOverview(null);
+          setRows(data.sources);
+          setColumns(["source", "count", "percentage"]);
+          setSecondaryTitle("Campaigns");
+          setSecondaryRows(data.campaigns);
+          setSecondaryColumns(["campaignName", "source", "medium", "sessions"]);
+        } else if (model === "live") {
+          const data = await fetchJson<{
+            activeUsers: number;
+            pageViewsPerMinute: number;
+            topPages: Record<string, unknown>[];
+          }>("/api/live");
+          setOverview(null);
+          setLiveOverview({ pageViewsPerMinute: data.pageViewsPerMinute });
+          setRows(data.topPages);
+          setColumns(["url", "views"]);
+          setSecondaryRows([]);
+        }
+
+        setLoadedModel(model);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load data");
+      } finally {
+        setInitialLoading(false);
+        if (!silent) {
+          setRefreshing(false);
+        }
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  }, [model]);
+    },
+    [initialLoading, loadedModel, model],
+  );
 
   useEffect(() => {
     setSelected(null);
+    if (model === "overview") {
+      setFilter("");
+    }
     void load();
-    const interval = model === "live" ? setInterval(load, 5000) : undefined;
+    const interval = model === "live" ? setInterval(() => void load({ silent: true }), 5000) : undefined;
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -135,223 +205,196 @@ export default function App() {
   };
 
   const currentModel = MODELS.find((m) => m.id === model)!;
+  const isNavigating = loadedModel !== null && loadedModel !== model;
+  const isBackgroundRefresh = refreshing && loadedModel === model;
+  const showInitialSkeleton = initialLoading;
+  const showNavigationSpinner = !initialLoading && isNavigating;
+  const showContent = loadedModel === model && !initialLoading;
+  const showSearch = model !== "overview";
 
-  return (
-    <div className="shell">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <div className="logo-row">
-            <div className="logo-mark">in</div>
-            <div className="logo-title">Insyte Studio</div>
-          </div>
-          <div className="logo-sub">Browse your local analytics database</div>
+  const studioContext = useMemo(
+    () =>
+      buildStudioContext({
+        model,
+        modelLabel: currentModel.label,
+        filter,
+        overview,
+        liveOverview,
+        counts: status?.counts,
+        columns,
+        rows: filteredRows,
+        secondaryTitle,
+        secondaryRows,
+        selectedRecord: selected,
+      }),
+    [
+      model,
+      currentModel.label,
+      filter,
+      overview,
+      liveOverview,
+      status?.counts,
+      columns,
+      filteredRows,
+      secondaryTitle,
+      secondaryRows,
+      selected,
+    ],
+  );
+
+  function renderContent() {
+    if (loadedModel === "overview" && overview) {
+      return (
+        <div className="space-y-6 pt-4">
+          <MetricCards
+            items={[
+              { label: "Page views", value: overview.totalPageviews },
+              { label: "Events", value: overview.totalEvents },
+              { label: "Sessions", value: overview.uniqueSessions },
+            ]}
+          />
+          {overview.totalPageviews === 0 && overview.totalEvents === 0 ? <EmptyOverview /> : null}
         </div>
+      );
+    }
 
-        <div className="search-box">
-          <input
-            type="search"
-            placeholder="Search records..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+    if (loadedModel === "live" && liveOverview) {
+      return (
+        <div className="space-y-6 pt-4">
+          <MetricCards
+            items={[{ label: "Page views / min", value: liveOverview.pageViewsPerMinute }]}
+          />
+          <DataTable
+            title={`${filteredRows.length} records`}
+            description="Top pages in the last hour"
+            rows={filteredRows}
+            columns={columns}
+            selected={selected}
+            onSelect={setSelected}
           />
         </div>
+      );
+    }
 
-        <div className="models-label">Models</div>
-        <nav className="model-list">
-          {MODELS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`model-btn ${model === item.id ? "active" : ""}`}
-              onClick={() => setModel(item.id)}
-            >
-              <span className="model-name">
-                <span className="model-icon">{item.icon}</span>
-                {item.label}
-              </span>
-              {item.id !== "overview" ? (
-                <span className="model-count">{modelCounts[item.id].toLocaleString()}</span>
-              ) : null}
-            </button>
-          ))}
-        </nav>
-
-        <div className="sidebar-footer">{status?.database ?? "Connecting..."}</div>
-      </aside>
-
-      <div className="main">
-        <header className="topbar">
-          <div className="topbar-title">
-            {model === "live" && <span className="live-dot" style={{ display: "inline-block", marginRight: 8 }} />}
-            {currentModel.label}
-          </div>
-          <div className="topbar-actions">
-            <button type="button" className="btn" onClick={() => void load()}>
-              Refresh
-            </button>
-          </div>
-        </header>
-
-        {error ? <div className="error-banner">{error}</div> : null}
-        {loading ? <div className="loading-bar">Loading records...</div> : null}
-
-        <div className={`workspace ${selected ? "with-detail" : ""}`}>
-          <div className="content">
-            {!loading && model === "overview" && overview ? (
-              <>
-                <div className="overview-grid">
-                  <MetricCard label="Pageviews" value={overview.totalPageviews} />
-                  <MetricCard label="Events" value={overview.totalEvents} />
-                  <MetricCard label="Sessions" value={overview.uniqueSessions} />
-                  <MetricCard label="Users" value={overview.uniqueUsers} />
-                </div>
-                <EmptyHint />
-              </>
-            ) : null}
-
-            {!loading && model === "live" && overview ? (
-              <>
-                <div className="overview-grid">
-                  <MetricCard label="Active users" value={overview.uniqueUsers} />
-                  <MetricCard label="Pageviews / min" value={overview.totalPageviews} />
-                </div>
-                <DataTable
-                  title={`${filteredRows.length} records`}
-                  rows={filteredRows}
-                  columns={columns}
-                  selected={selected}
-                  onSelect={setSelected}
-                />
-              </>
-            ) : null}
-
-            {!loading && model !== "overview" && model !== "live" ? (
-              <div className={secondaryRows.length ? "split-panels" : undefined}>
-                <DataTable
-                  title={`${filteredRows.length} records`}
-                  rows={filteredRows}
-                  columns={columns}
-                  selected={selected}
-                  onSelect={setSelected}
-                  emptyLabel={model}
-                />
-                {secondaryRows.length ? (
-                  <DataTable
-                    title={secondaryTitle}
-                    rows={secondaryRows}
-                    columns={secondaryColumns}
-                    selected={null}
-                    onSelect={() => undefined}
-                  />
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          {selected ? (
-            <aside className="detail-panel">
-              <h3>Record details</h3>
-              {Object.entries(selected).map(([key, value]) => (
-                <div key={key} className="detail-row">
-                  <div className="detail-key">{key}</div>
-                  <div className="detail-value">{formatCell(value)}</div>
-                </div>
-              ))}
-            </aside>
+    if (loadedModel && loadedModel !== "overview" && loadedModel !== "live") {
+      return (
+        <div
+          className={
+            secondaryRows.length ? "grid gap-6 pt-4 xl:grid-cols-2" : "space-y-6 pt-4"
+          }
+        >
+          <DataTable
+            title={`${filteredRows.length} records`}
+            rows={filteredRows}
+            columns={columns}
+            selected={selected}
+            onSelect={setSelected}
+            emptyLabel={MODELS.find((m) => m.id === loadedModel)?.label}
+          />
+          {secondaryRows.length ? (
+            <DataTable
+              title={secondaryTitle}
+              rows={secondaryRows}
+              columns={secondaryColumns}
+              selected={null}
+              onSelect={() => undefined}
+            />
           ) : null}
         </div>
-      </div>
-    </div>
-  );
-}
+      );
+    }
 
-function MetricCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="metric-card">
-      <div className="metric-label">{label}</div>
-      <div className="metric-value">{value.toLocaleString()}</div>
-    </div>
-  );
-}
-
-function EmptyHint() {
-  return (
-    <div className="empty-state">
-      <h2>No events yet</h2>
-      <p>Install the SDK, run your app, and events will appear here automatically in development.</p>
-      <p>
-        <code>bun add @insyte/track</code> · <code>npx insyte studio</code>
-      </p>
-    </div>
-  );
-}
-
-function DataTable({
-  title,
-  rows,
-  columns,
-  selected,
-  onSelect,
-  emptyLabel,
-}: {
-  title: string;
-  rows: Record<string, unknown>[];
-  columns: string[];
-  selected: Record<string, unknown> | null;
-  onSelect: (row: Record<string, unknown>) => void;
-  emptyLabel?: string;
-}) {
-  if (rows.length === 0) {
-    return (
-      <div className="empty-state">
-        <h2>No {emptyLabel ?? "records"} yet</h2>
-        <p>Send analytics from your app using the Insyte SDK.</p>
-        <p>
-          <code>analytics.track("button_clicked")</code>
-        </p>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="table-panel">
-      <div className="table-toolbar">
-        <span>{title}</span>
-        <span>{columns.length} fields</span>
-      </div>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th key={column}>{column}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr
-                key={index}
-                className={selected === row ? "selected" : ""}
-                onClick={() => onSelect(row)}
+    <>
+      <AppSidebar
+        model={model}
+        onModelChange={setModel}
+        counts={modelCounts}
+        database={status?.database}
+      />
+      <AssistantSidebarProvider>
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b">
+            <div className="flex items-center gap-2 px-4">
+              <SidebarTrigger className="-ml-1" title="Toggle sidebar ([)" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden md:block">
+                    <span className="text-muted-foreground">Insyte Studio</span>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator className="hidden md:block" />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="flex items-center gap-2">
+                      {model === "live" ? <LiveIndicator /> : null}
+                      {currentModel.label}
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+            <div className="flex items-center gap-2 px-4">
+              {showSearch ? (
+                <SearchInput
+                  value={filter}
+                  onChange={setFilter}
+                  className="w-40 sm:w-56"
+                />
+              ) : null}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void load()}
+                disabled={refreshing || isNavigating}
               >
-                {columns.map((column) => (
-                  <td key={column} className="cell-mono">
-                    {formatCell(row[column])}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+                <RefreshCw className={refreshing ? "size-4 animate-spin" : "size-4"} />
+                Refresh
+              </Button>
+              <AssistantSidebarTrigger />
+            </div>
+          </header>
+
+          {error ? (
+            <div className="mx-4 mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="flex min-h-0 flex-1">
+            <div className="relative min-w-0 flex-1 overflow-auto p-4 pt-0">
+              {showInitialSkeleton ? <ContentSkeleton /> : null}
+              {showNavigationSpinner ? <ContentSpinner /> : null}
+              {showContent ? (
+                <div
+                  className={cn(
+                    "transition-opacity duration-200",
+                    isBackgroundRefresh && "pointer-events-none opacity-60",
+                  )}
+                >
+                  {renderContent()}
+                </div>
+              ) : null}
+            </div>
+
+            {selected ? (
+              <RecordDetailPanel record={selected} onClose={() => setSelected(null)} />
+            ) : null}
+          </div>
+        </SidebarInset>
+        <AssistantSidebar>
+          <AssistantChat context={studioContext} />
+        </AssistantSidebar>
+      </AssistantSidebarProvider>
+    </>
   );
 }
 
-function formatCell(value: unknown): string {
-  if (value === null || value === undefined) return "—";
-  if (value instanceof Date) return value.toISOString();
-  if (typeof value === "object") return JSON.stringify(value, null, 2);
-  return String(value);
+export default function App() {
+  return (
+    <SidebarProvider>
+      <StudioShell />
+    </SidebarProvider>
+  );
 }
