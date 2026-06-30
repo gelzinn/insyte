@@ -1,6 +1,6 @@
 {
   "name": "@insyte/track",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "gelzin <g@gelzin.com>",
   "description": "Unified analytics integration for JavaScript apps — GA4, Mixpanel, PostHog, Segment, and custom providers",
   "homepage": "https://insyte.gelzin.com/",
@@ -35,6 +35,24 @@
       "require": "./dist/vue/index.js",
       "default": "./dist/vue/index.mjs"
     },
+    "./angular": {
+      "types": "./dist/angular/index.d.ts",
+      "import": "./dist/angular/index.mjs",
+      "require": "./dist/angular/index.js",
+      "default": "./dist/angular/index.mjs"
+    },
+    "./next": {
+      "types": "./dist/next/index.d.ts",
+      "import": "./dist/next/index.mjs",
+      "require": "./dist/next/index.js",
+      "default": "./dist/next/index.mjs"
+    },
+    "./next/client": {
+      "types": "./dist/next/client.d.ts",
+      "import": "./dist/next/client.mjs",
+      "require": "./dist/next/client.js",
+      "default": "./dist/next/client.mjs"
+    },
     "./providers": {
       "types": "./dist/providers/index.d.ts",
       "import": "./dist/providers/index.mjs",
@@ -50,10 +68,18 @@
     "dev": "tsup --watch --dts"
   },
   "peerDependencies": {
+    "@angular/core": ">=15",
+    "next": ">=13",
     "react": ">=17",
     "vue": ">=3"
   },
   "peerDependenciesMeta": {
+    "@angular/core": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },
@@ -62,7 +88,9 @@
     }
   },
   "devDependencies": {
+    "@angular/core": "^19.2.0",
     "@types/react": "^19",
+    "next": "^15.5.2",
     "react": "^19.1.0",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.2",
@@ -79,10 +107,15 @@
     "segment",
     "amplitude",
     "plausible",
+    "hotjar",
+    "heap",
+    "rudderstack",
+    "gdpr",
+    "consent",
     "react",
     "vue",
     "angular",
-    "vite",
-    "nextjs"
+    "nextjs",
+    "vite"
   ]
 }

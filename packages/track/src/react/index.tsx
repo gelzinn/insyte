@@ -5,11 +5,12 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
 import { AnalyticsClient, createAnalytics } from "../core/analytics-client";
+import type { ConsentCategory, ConsentState } from "../types";
 import type {
   AnalyticsProperties,
   CreateAnalyticsOptions,
@@ -30,16 +31,21 @@ export function AnalyticsProvider({
   children,
   autoInit = true,
   autoPageView = false,
+  waitForConsent = false,
   ...options
 }: AnalyticsProviderProps) {
   const clientRef = useRef<AnalyticsClient | null>(null);
 
   if (!clientRef.current) {
-    clientRef.current = createAnalytics(options);
+    clientRef.current = createAnalytics({ ...options, waitForConsent });
   }
 
   useEffect(() => {
     if (!autoInit || !clientRef.current) {
+      return;
+    }
+
+    if (waitForConsent) {
       return;
     }
 
@@ -52,7 +58,7 @@ export function AnalyticsProvider({
     });
 
     return () => cleanup?.();
-  }, [autoInit, autoPageView]);
+  }, [autoInit, autoPageView, waitForConsent]);
 
   return (
     <AnalyticsContext.Provider value={clientRef.current}>
@@ -105,10 +111,137 @@ export function useIdentify(userId?: string, traits?: UserTraits, options?: Trac
   }, [client, serialized, userId]);
 }
 
+export function useConsent() {
+  const client = useAnalytics();
+  const [consent, setConsent] = useState<ConsentState>(() =>
+    client.getConsentManager().getConsent(),
+  );
+
+  useEffect(() => {
+    return client.getConsentManager().onConsentChange(setConsent);
+  }, [client]);
+
+  const grantConsent = useCallback(
+    (categories: ConsentCategory[] | ConsentState) => {
+      const next = client.grantConsent(categories);
+      void client.init().then(() => {
+        client.setupAutoPageView();
+      });
+      return next;
+    },
+    [client],
+  );
+
+  const denyConsent = useCallback(
+    (categories?: ConsentCategory[]) => client.denyConsent(categories),
+    [client],
+  );
+
+  return {
+    consent,
+    grantConsent,
+    denyConsent,
+    hasAnalyticsConsent: Boolean(consent.analytics),
+    hasMarketingConsent: Boolean(consent.marketing),
+  };
+}
+
+export interface ConsentBannerProps {
+  title?: string;
+  description?: string;
+  acceptLabel?: string;
+  rejectLabel?: string;
+  className?: string;
+  onAccept?: (consent: ConsentState) => void;
+  onReject?: (consent: ConsentState) => void;
+}
+
+export function ConsentBanner({
+  title = "Este site usa cookies",
+  description = "Usamos analytics para melhorar sua experiência. Você pode aceitar ou recusar o rastreamento.",
+  acceptLabel = "Aceitar",
+  rejectLabel = "Recusar",
+  className,
+  onAccept,
+  onReject,
+}: ConsentBannerProps) {
+  const { consent, grantConsent, denyConsent } = useConsent();
+
+  if (consent.analytics) {
+    return null;
+  }
+
+  return (
+    <div
+      className={className}
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        display: "flex",
+        gap: "12px",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "16px 20px",
+        background: "#111827",
+        color: "#f9fafb",
+        boxShadow: "0 -4px 24px rgba(0,0,0,0.15)",
+      }}
+      role="dialog"
+      aria-live="polite"
+    >
+      <div>
+        <strong style={{ display: "block", marginBottom: 4 }}>{title}</strong>
+        <span style={{ fontSize: 14, opacity: 0.85 }}>{description}</span>
+      </div>
+      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+        <button
+          type="button"
+          onClick={() => {
+            const next = denyConsent(["analytics", "marketing"]);
+            onReject?.(next);
+          }}
+          style={{
+            padding: "8px 14px",
+            borderRadius: 8,
+            border: "1px solid #4b5563",
+            background: "transparent",
+            color: "#f9fafb",
+            cursor: "pointer",
+          }}
+        >
+          {rejectLabel}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const next = grantConsent(["analytics", "marketing"]);
+            onAccept?.(next);
+          }}
+          style={{
+            padding: "8px 14px",
+            borderRadius: 8,
+            border: "none",
+            background: "#2563eb",
+            color: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          {acceptLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export { AnalyticsClient, createAnalytics };
 export type {
   AnalyticsProperties,
   AnalyticsProvider as AnalyticsProviderInterface,
+  ConsentCategory,
+  ConsentState,
   CreateAnalyticsOptions,
   PageProperties,
   TrackOptions,

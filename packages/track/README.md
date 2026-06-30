@@ -35,113 +35,142 @@ analytics.track("button_clicked", { label: "signup" });
 // app/providers/analytics-provider.tsx
 "use client";
 
-import { AnalyticsProvider, googleAnalytics, posthog } from "@insyte/track/react";
+import { AnalyticsProvider, ConsentBanner, googleAnalytics } from "@insyte/track/react";
+import { createCustomProvider } from "@insyte/track";
 
-export function AppAnalyticsProvider({ children }: { children: React.ReactNode }) {
+export function AppAnalyticsProvider({ children }) {
   return (
     <AnalyticsProvider
-      autoInit
+      waitForConsent
       autoPageView
-      debug={process.env.NODE_ENV === "development"}
-      providers={[
-        googleAnalytics({ measurementId: process.env.NEXT_PUBLIC_GA_ID! }),
-        posthog({ apiKey: process.env.NEXT_PUBLIC_POSTHOG_KEY! }),
-      ]}
+      consent={{ storage: "cookie", storageKey: "insyte-consent" }}
+      providers={[googleAnalytics({ measurementId: process.env.NEXT_PUBLIC_GA_ID! })]}
     >
       {children}
+      <ConsentBanner />
     </AnalyticsProvider>
   );
 }
 ```
 
 ```tsx
-// app/layout.tsx
-import { AppAnalyticsProvider } from "./providers/analytics-provider";
+// app/analytics-scripts.tsx
+"use client";
 
-export default function RootLayout({ children }) {
+import { AnalyticsScripts } from "@insyte/track/next/client";
+
+export function AppAnalyticsScripts() {
   return (
-    <html>
-      <body>
-        <AppAnalyticsProvider>{children}</AppAnalyticsProvider>
-      </body>
-    </html>
+    <AnalyticsScripts
+      googleAnalytics={{ measurementId: process.env.NEXT_PUBLIC_GA_ID! }}
+    />
   );
 }
 ```
 
-```tsx
-// components/signup-button.tsx
-"use client";
+```typescript
+// middleware.ts
+import { createConsentMiddleware } from "@insyte/track/next";
 
-import { useTrack } from "@insyte/track/react";
-
-export function SignupButton() {
-  const track = useTrack();
-
-  return (
-    <button onClick={() => track("signup_clicked", { plan: "pro" })}>
-      Sign up
-    </button>
-  );
-}
+export const middleware = createConsentMiddleware({
+  cookieName: "insyte-consent",
+  requiredCategories: ["analytics"],
+});
 ```
 
 ### Vue 3
 
 ```typescript
-// main.ts
 import { createApp } from "vue";
 import { createInsyteAnalyticsPlugin, googleAnalytics } from "@insyte/track/vue";
-import App from "./App.vue";
 
 const app = createApp(App);
-
-const analyticsPlugin = createInsyteAnalyticsPlugin({
-  autoInit: true,
-  autoPageView: true,
-  providers: [googleAnalytics({ measurementId: "G-XXXXXXXX" })],
-});
-
-app.use(analyticsPlugin);
+app.use(
+  createInsyteAnalyticsPlugin({
+    autoInit: true,
+    autoPageView: true,
+    providers: [googleAnalytics({ measurementId: "G-XXXXXXXX" })],
+  }),
+);
 app.mount("#app");
 ```
 
-### Angular
+### Angular (plugin nativo)
 
 ```typescript
-// analytics.service.ts
-import { Injectable } from "@angular/core";
-import { setupAnalytics, googleAnalytics, type AnalyticsClient } from "@insyte/track";
+// main.ts
+import { bootstrapApplication } from "@angular/platform-browser";
+import { provideInsyteAnalytics, InsyteAnalyticsService } from "@insyte/track/angular";
+import { googleAnalytics } from "@insyte/track";
 
-@Injectable({ providedIn: "root" })
-export class AnalyticsService {
-  private client!: AnalyticsClient;
-
-  async init() {
-    this.client = await setupAnalytics({
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideInsyteAnalytics({
+      autoInit: true,
       autoPageView: true,
-      providers: [googleAnalytics({ measurementId: environment.gaId })],
-    });
-  }
+      providers: [googleAnalytics({ measurementId: "G-XXXXXXXX" })],
+    }),
+  ],
+});
+```
 
-  track(event: string, properties?: Record<string, unknown>) {
-    this.client.track(event, properties);
+```typescript
+// signup.component.ts
+import { Component, inject } from "@angular/core";
+import { InsyteAnalyticsService } from "@insyte/track/angular";
+
+@Component({ /* ... */ })
+export class SignupComponent {
+  private analytics = inject(InsyteAnalyticsService);
+
+  onSignup() {
+    this.analytics.track("signup_clicked", { plan: "pro" });
   }
 }
 ```
 
 ## Providers built-in
 
-| Provider | Função | Identificação de usuário |
-|----------|--------|--------------------------|
+| Provider | Função | Identificação |
+|----------|--------|---------------|
 | `googleAnalytics` | GA4 | ✅ |
 | `mixpanel` | Mixpanel | ✅ |
 | `posthog` | PostHog | ✅ |
 | `segment` | Segment | ✅ |
 | `amplitude` | Amplitude | ✅ |
-| `plausible` | Plausible | ❌ (privacy-first) |
+| `plausible` | Plausible | ❌ |
+| `heap` | Heap | ✅ |
+| `rudderstack` | RudderStack | ✅ |
+| `hotjar` | Hotjar | ✅ |
 | `facebookPixel` | Meta Pixel | ❌ |
 | `clarity` | Microsoft Clarity | ✅ |
+
+## Consent / GDPR
+
+Só inicializa providers após consentimento do usuário:
+
+```typescript
+import { setupAnalytics, googleAnalytics, facebookPixel } from "@insyte/track";
+
+const analytics = await setupAnalytics({
+  waitForConsent: true,
+  consent: {
+    storage: "cookie",
+    storageKey: "insyte-consent",
+    defaultConsent: { necessary: true, analytics: false, marketing: false },
+  },
+  providers: [
+    googleAnalytics({ measurementId: "G-XXX" }),
+    facebookPixel({ pixelId: "123" }), // categoria marketing
+  ],
+});
+
+// Após o usuário aceitar
+analytics.grantConsent(["analytics", "marketing"]);
+await analytics.init();
+```
+
+React inclui `<ConsentBanner />` e hook `useConsent()`.
 
 ## Provider customizado
 
@@ -150,57 +179,26 @@ import { createCustomProvider, setupAnalytics } from "@insyte/track";
 
 const myProvider = createCustomProvider({
   name: "my-backend",
-  debug: true,
   handlers: {
-    init: () => console.log("ready"),
-    track: (event, properties) => {
-      fetch("/api/analytics", {
-        method: "POST",
-        body: JSON.stringify({ event, properties }),
-      });
-    },
-    page: (properties) => {
-      fetch("/api/analytics", {
-        method: "POST",
-        body: JSON.stringify({ type: "pageview", ...properties }),
-      });
-    },
-    identify: (userId, traits) => {
-      fetch("/api/analytics/identify", {
-        method: "POST",
-        body: JSON.stringify({ userId, traits }),
-      });
-    },
+    track: (event, properties) =>
+      fetch("/api/analytics", { method: "POST", body: JSON.stringify({ event, properties }) }),
   },
 });
 
 await setupAnalytics({ providers: [myProvider] });
 ```
 
-## API
-
-```typescript
-// Instância
-analytics.track("event_name", { key: "value" });
-analytics.page({ title: "Home" });
-analytics.identify("user_123", { plan: "pro" });
-analytics.reset();
-analytics.setUserProperties({ company: "Acme" });
-
-// Enviar só para providers específicos
-analytics.track("purchase", { amount: 99 }, { providers: ["mixpanel"] });
-
-// Helpers globais (após initAnalytics)
-import { track, page, identify } from "@insyte/track";
-track("clicked");
-```
-
 ## Exports
 
-- `@insyte/track` — core framework-agnostic
-- `@insyte/track/react` — Provider, hooks
-- `@insyte/track/vue` — plugin Vue 3
-- `@insyte/track/providers` — apenas os providers
+| Export | Descrição |
+|--------|-----------|
+| `@insyte/track` | Core + consent + providers |
+| `@insyte/track/react` | Provider, hooks, ConsentBanner |
+| `@insyte/track/vue` | Plugin Vue 3 |
+| `@insyte/track/angular` | `InsyteAnalyticsService`, `provideInsyteAnalytics` |
+| `@insyte/track/next` | Middleware, script definitions, SSR helpers |
+| `@insyte/track/next/client` | `<AnalyticsScripts />` com `next/script` |
+| `@insyte/track/providers` | Apenas os providers |
 
 ## Licença
 

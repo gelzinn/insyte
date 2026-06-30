@@ -43,9 +43,38 @@ export interface AnalyticsConfig {
   autoPageView?: boolean;
 }
 
+export interface ConsentManagerLike {
+  getConsent(): ConsentState;
+  hasCategory(category: ConsentCategory): boolean;
+  isProviderAllowed(providerName: string): boolean;
+  grantConsent(categories: ConsentCategory[] | ConsentState): ConsentState;
+  denyConsent(categories?: ConsentCategory[]): ConsentState;
+  onConsentChange(listener: (consent: ConsentState) => void): () => void;
+}
+
 export interface CreateAnalyticsOptions {
   providers: Array<AnalyticsProvider | ProviderFactory>;
   debug?: boolean;
+  consent?: ConsentOptions | ConsentManagerLike;
+  waitForConsent?: boolean;
+}
+
+export type ConsentCategory = "necessary" | "analytics" | "marketing" | "preferences";
+
+export interface ConsentState {
+  necessary: boolean;
+  analytics?: boolean;
+  marketing?: boolean;
+  preferences?: boolean;
+}
+
+export interface ConsentOptions {
+  storageKey?: string;
+  storage?: "localStorage" | "cookie";
+  cookieDomain?: string;
+  cookieMaxAge?: number;
+  defaultConsent?: Partial<ConsentState>;
+  providerCategories?: Record<string, ConsentCategory>;
 }
 
 export interface TrackOptions {

@@ -1,7 +1,7 @@
 "use client";
 
 import { createCustomProvider, googleAnalytics } from "@insyte/track";
-import { AnalyticsProvider } from "@insyte/track/react";
+import { AnalyticsProvider, ConsentBanner } from "@insyte/track/react";
 
 const demoProvider = createCustomProvider({
   name: "demo-console",
@@ -32,12 +32,19 @@ export function AppAnalyticsProvider({ children }: { children: React.ReactNode }
 
   return (
     <AnalyticsProvider
-      autoInit
+      autoInit={false}
       autoPageView
+      waitForConsent
       debug={process.env.NODE_ENV === "development"}
+      consent={{
+        storage: "cookie",
+        storageKey: "insyte-consent",
+        defaultConsent: { necessary: true, analytics: false, marketing: false },
+      }}
       providers={providers}
     >
       {children}
+      <ConsentBanner />
     </AnalyticsProvider>
   );
 }

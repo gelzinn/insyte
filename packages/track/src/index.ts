@@ -1,6 +1,8 @@
 export {
   AnalyticsClient,
+  ConsentManager,
   createAnalytics,
+  createConsentManager,
   getAnalytics,
   identify,
   initAnalytics,
@@ -17,6 +19,10 @@ export type {
   AnalyticsProperties,
   AnalyticsProvider,
   AnalyticsProviderConfig,
+  ConsentCategory,
+  ConsentManagerLike,
+  ConsentOptions,
+  ConsentState,
   CreateAnalyticsOptions,
   CustomProviderHandlers,
   CustomProviderOptions,
@@ -32,9 +38,12 @@ export {
   createCustomProvider,
   facebookPixel,
   googleAnalytics,
+  heap,
+  hotjar,
   mixpanel,
   plausible,
   posthog,
+  rudderstack,
   segment,
 } from "./providers";
 
@@ -43,10 +52,20 @@ export type {
   ClarityConfig,
   FacebookPixelConfig,
   GoogleAnalyticsConfig,
+  HeapConfig,
+  HotjarConfig,
   MixpanelConfig,
   PlausibleConfig,
   PostHogConfig,
+  RudderStackConfig,
   SegmentConfig,
 } from "./providers";
+
+export {
+  allConsentCategories,
+  DEFAULT_PROVIDER_CATEGORIES,
+  hasAnalyticsConsent,
+  hasMarketingConsent,
+} from "./consent";
 
 export { getCurrentPageProperties, isBrowser, loadScript } from "./utils";
