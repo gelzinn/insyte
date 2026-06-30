@@ -93,12 +93,12 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
   return (
     <>
       <Message align={isUser ? "end" : "start"} className="items-start gap-2.5">
-        <div className="flex shrink-0 self-start pt-0.5">{avatar}</div>
+        <div className="flex shrink-0 self-start">{avatar}</div>
 
         <MessageContent className="max-w-[85%] gap-1.5">
           <span
             className={cn(
-              "text-xs leading-none font-medium text-muted-foreground",
+              "pt-0.5 pb-2 text-xs leading-none font-medium text-muted-foreground",
               isUser ? "self-end" : "self-start",
             )}
           >
@@ -107,14 +107,14 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
 
           <div
             className={cn(
-              "group/bubble-row relative flex w-full min-w-0",
+              "flex w-full min-w-0",
               isUser ? "justify-end" : "justify-start",
             )}
           >
             <Bubble
               variant={isUser ? "default" : "muted"}
               align={isUser ? "end" : "start"}
-              className="max-w-full"
+              className="group/bubble-row max-w-full"
             >
               <BubbleContent>
                 {!isUser ? (
@@ -123,33 +123,35 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
                   message.content
                 )}
               </BubbleContent>
-            </Bubble>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  className={cn(
-                    "absolute top-1/2 size-7 -translate-y-1/2 cursor-pointer opacity-0 transition-opacity group-hover/bubble-row:opacity-100 focus-visible:opacity-100",
-                    isUser ? "-left-9" : "-right-9",
-                  )}
-                  aria-label="Message actions"
-                >
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align={isUser ? "end" : "start"} className="w-44">
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => setInfoOpen(true)}
-                >
-                  <Info className="size-4" />
-                  Message info
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    className={cn(
+                      "absolute top-1 size-7 cursor-pointer opacity-0 transition-opacity group-hover/bubble-row:opacity-100 focus-visible:opacity-100",
+                      isUser
+                        ? "left-1 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                        : "right-1 hover:bg-foreground/5",
+                    )}
+                    aria-label="Message actions"
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isUser ? "end" : "start"} className="w-44">
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => setInfoOpen(true)}
+                  >
+                    <Info className="size-4" />
+                    Message info
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </Bubble>
           </div>
         </MessageContent>
       </Message>
