@@ -71,3 +71,8 @@ export {
 } from "./consent";
 
 export { getCurrentPageProperties, isBrowser, loadScript } from "./utils";
+
+export { Insyte, createInsyte } from "./insyte";
+export type { InsyteOptions } from "./config/resolve-config";
+export { resolveInsyteConfig } from "./config/resolve-config";
+export { InsyteError, formatInsyteError, logInsyteError, missingStudioHint } from "./errors";

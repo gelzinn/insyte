@@ -6,6 +6,7 @@ import type {
   UserTraits,
 } from "../types";
 import { debugLog, getCurrentPageProperties, isBrowser } from "../utils";
+import { logInsyteError, missingStudioHint } from "../errors";
 
 export interface InsyteConfig extends AnalyticsProviderConfig {
   /** Insyte Studio URL (default: http://127.0.0.1:5555) */
@@ -99,7 +100,7 @@ function parseUtmParams(url: string): IngestPayload["utmParams"] | undefined {
   }
 }
 
-async function sendIngest(studioUrl: string, payload: IngestPayload): Promise<void> {
+async function sendIngest(studioUrl: string, payload: IngestPayload, debug = false): Promise<void> {
   const endpoint = `${studioUrl.replace(/\/$/, "")}/ingest`;
 
   try {
@@ -110,7 +111,10 @@ async function sendIngest(studioUrl: string, payload: IngestPayload): Promise<vo
       keepalive: true,
     });
   } catch (error) {
-    console.error(`[@insyte/track:${PROVIDER_NAME}] Failed to send event`, error);
+    logInsyteError("collector", new Error(missingStudioHint(studioUrl)));
+    if (debug) {
+      console.debug(`[@insyte/track:insyte]`, error);
+    }
   }
 }
 
@@ -138,7 +142,7 @@ export function insyte(config: InsyteConfig = {}): AnalyticsProvider {
       url: currentPageUrl,
       duration,
       provider: PROVIDER_NAME,
-    });
+    }, debug);
   };
 
   const attachExitListener = (): void => {
@@ -183,7 +187,7 @@ export function insyte(config: InsyteConfig = {}): AnalyticsProvider {
         properties: properties as Record<string, unknown> | undefined,
         utmParams: pageData.url ? parseUtmParams(pageData.url) : undefined,
         provider: PROVIDER_NAME,
-      });
+      }, debug);
       debugLog(debug, PROVIDER_NAME, "track", { event, properties });
     },
     page(properties?: PageProperties) {
@@ -207,7 +211,7 @@ export function insyte(config: InsyteConfig = {}): AnalyticsProvider {
         userAgent: isBrowser() ? navigator.userAgent : undefined,
         utmParams: pageData.url ? parseUtmParams(pageData.url) : undefined,
         provider: PROVIDER_NAME,
-      });
+      }, debug);
       debugLog(debug, PROVIDER_NAME, "page", pageData);
     },
     identify(userId: string, traits?: UserTraits) {
@@ -227,7 +231,7 @@ export function insyte(config: InsyteConfig = {}): AnalyticsProvider {
         userAgent: isBrowser() ? navigator.userAgent : undefined,
         properties: traits as Record<string, unknown> | undefined,
         provider: PROVIDER_NAME,
-      });
+      }, debug);
       debugLog(debug, PROVIDER_NAME, "identify", { userId, traits });
     },
     reset() {
@@ -261,7 +265,7 @@ export function insyte(config: InsyteConfig = {}): AnalyticsProvider {
         userAgent: isBrowser() ? navigator.userAgent : undefined,
         properties: properties as Record<string, unknown> | undefined,
         provider: PROVIDER_NAME,
-      });
+      }, debug);
       debugLog(debug, PROVIDER_NAME, "setUserProperties", properties);
     },
   };

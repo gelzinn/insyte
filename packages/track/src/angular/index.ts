@@ -1,5 +1,6 @@
 import { APP_INITIALIZER, Injectable, inject, InjectionToken, type Provider } from "@angular/core";
 import { AnalyticsClient, createAnalytics } from "../core/analytics-client";
+import { resolveInsyteConfig, type InsyteOptions } from "../config/resolve-config";
 import type {
   AnalyticsProperties,
   ConsentCategory,
@@ -97,6 +98,15 @@ export class InsyteAnalyticsService {
   }
 }
 
+export function provideInsyte(options?: InsyteOptions & { autoPageView?: boolean }): Provider[] {
+  const config = resolveInsyteConfig({ ...options, autoPageView: options?.autoPageView ?? true });
+  return provideInsyteAnalytics({
+    ...config,
+    autoInit: true,
+    autoPageView: options?.autoPageView ?? true,
+  });
+}
+
 export function provideInsyteAnalytics(config: InsyteAnalyticsConfig): Provider[] {
   const providers: Provider[] = [{ provide: INSYTE_ANALYTICS_CONFIG, useValue: config }];
 
@@ -113,6 +123,7 @@ export function provideInsyteAnalytics(config: InsyteAnalyticsConfig): Provider[
 }
 
 export { AnalyticsClient, createAnalytics };
+export type { InsyteOptions } from "../config/resolve-config";
 export type {
   AnalyticsProperties,
   ConsentCategory,
